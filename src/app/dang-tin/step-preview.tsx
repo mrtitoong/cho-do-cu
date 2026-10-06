@@ -6,10 +6,17 @@ import {
   formatListingPrice,
   type ParsedListing,
 } from "@/lib/listing-schema";
+import type { ListingLocation } from "@/lib/listing-location";
 
-type Props = { sub: SubCategory; data: ParsedListing };
+type Props = {
+  sub: SubCategory;
+  data: ParsedListing;
+  coverUrl?: string;
+  imageCount: number;
+  location: ListingLocation | null;
+};
 
-export function StepPreview({ sub, data }: Props) {
+export function StepPreview({ sub, data, coverUrl, imageCount, location }: Props) {
   const attributes = data.attributes as Record<string, unknown>;
   const { label, unit } = resolvePricing(sub, attributes);
   const salaryField = sub.fields.find((f) => f.key === sub.priceFromField);
@@ -26,9 +33,21 @@ export function StepPreview({ sub, data }: Props) {
       <p className="text-sm text-muted-foreground">Kiểm tra lại tin trước khi đăng. Bấm &quot;Quay lại&quot; để sửa.</p>
 
       <article className="overflow-hidden rounded-xl border">
-        <div className="flex aspect-[16/9] items-center justify-center gap-2 bg-muted text-sm text-muted-foreground">
-          <ImageIcon className="size-5" /> Chưa có ảnh
-        </div>
+        {coverUrl ? (
+          <div className="relative aspect-[16/9] bg-muted">
+            {/* eslint-disable-next-line @next/next/no-img-element -- ảnh xem trước là blob: URL cục bộ */}
+            <img src={coverUrl} alt="Ảnh bìa" className="size-full object-cover" />
+            {imageCount > 1 && (
+              <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded bg-black/70 px-2 py-0.5 text-xs text-white">
+                <ImageIcon className="size-3" /> {imageCount} ảnh
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex aspect-[16/9] items-center justify-center gap-2 bg-muted text-sm text-muted-foreground">
+            <ImageIcon className="size-5" /> Không có ảnh
+          </div>
+        )}
 
         <div className="space-y-4 p-4">
           <div>
@@ -41,7 +60,8 @@ export function StepPreview({ sub, data }: Props) {
               {priceText}
             </p>
             <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="size-4" /> Chưa chọn vị trí
+              <MapPin className="size-4 shrink-0" />
+              {location ? (location.addressText ?? "Đã chọn vị trí trên bản đồ") : "Chưa chọn vị trí"}
             </p>
           </div>
 

@@ -1,22 +1,31 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type FieldPath, type Resolver } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CircleCheck, ImageIcon, Loader2, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { getSubCategory, type MainCategorySlug } from "@/config/categories";
+import { imagesRequired } from "@/lib/listing-images";
+import type { ListingLocation } from "@/lib/listing-location";
 import { buildZodSchema, emptyAttributes, type ListingFormValues } from "@/lib/listing-schema";
 import { createListing } from "./actions";
 import { StepCategory } from "./step-category";
 import { StepDetails } from "./step-details";
+import { StepImages } from "./step-images";
+import { StepLocation } from "./step-location";
 import { StepPreview } from "./step-preview";
+import { useImageUploads } from "./use-image-uploads";
 
 const STEPS = ["Danh mục", "Thông tin", "Ảnh", "Vị trí", "Xem trước"] as const;
 const DETAILS_STEP = 1;
+const IMAGES_STEP = 2;
+const LOCATION_STEP = 3;
+const PREVIEW_STEP = 4;
+const STEP_INDEX = { details: DETAILS_STEP, images: IMAGES_STEP, location: LOCATION_STEP } as const;
 
 const DEFAULT_VALUES: ListingFormValues = {
   title: "",
@@ -26,20 +35,16 @@ const DEFAULT_VALUES: ListingFormValues = {
   attributes: {},
 };
 
-function ComingSoon({ icon: Icon, text }: { icon: typeof ImageIcon; text: string }) {
-  return (
-    <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-      <Icon className="size-8" strokeWidth={1.5} />
-      {text}
-    </div>
-  );
-}
-
-export function PostListingForm() {
+export function PostListingForm({ userId }: { userId: string }) {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [mainSlug, setMainSlug] = useState<MainCategorySlug | null>(null);
   const [subSlug, setSubSlug] = useState<string | null>(null);
-  const [createdId, setCreatedId] = useState<string | null>(null);
+  // id của tin sinh sẵn để upload ảnh vào {user_id}/{listing_id}/ trước khi tin được ghi vào DB
+  const [listingId] = useState(() => crypto.randomUUID());
+  const uploads = useImageUploads(userId, listingId);
+  const [location, setLocation] = useState<ListingLocation | null>(null);
+  const [stepError, setStepError] = useState<string | undefined>();
   const [submitting, startSubmit] = useTransition();
 
   const sub = subSlug ? getSubCategory(subSlug) : undefined;
@@ -53,6 +58,7 @@ export function PostListingForm() {
 
   function goTo(next: number) {
     setStep(next);
+    setStepError(undefined);
     window.scrollTo({ top: 0 });
   }
 
@@ -69,57 +75,59 @@ export function PostListingForm() {
     form.reset({ ...form.getValues(), attributes: next ? emptyAttributes(next) : {} });
   }
 
+  /** Lỗi chặn không cho rời bước Ảnh / Vị trí (undefined = hợp lệ). */
+  function blockingError(target: number) {
+    if (target === IMAGES_STEP) {
+      if (uploads.busy) return "Vui lòng chờ ảnh tải lên xong.";
+      if (uploads.failed) return 'Có ảnh tải lên bị lỗi. Bấm "Thử lại" hoặc xóa ảnh đó.';
+      if (sub && imagesRequired(sub) && uploads.items.length === 0) return "Vui lòng thêm ít nhất 1 ảnh.";
+    }
+    if (target === LOCATION_STEP && !location) return "Vui lòng chọn vị trí trên bản đồ.";
+    return undefined;
+  }
+
   async function handleNext() {
     if (step === DETAILS_STEP && !(await form.trigger(undefined, { shouldFocus: true }))) return;
+    const error = blockingError(step);
+    if (error) {
+      setStepError(error);
+      return;
+    }
     goTo(step + 1);
   }
 
   function handleSubmit() {
     if (!subSlug) return;
     startSubmit(async () => {
-      const result = await createListing(subSlug, form.getValues());
+      const result = await createListing({
+        listingId,
+        categorySlug: subSlug,
+        values: form.getValues(),
+        imagePaths: uploads.paths,
+        location,
+      });
       if (result.ok) {
         toast.success("Đăng tin thành công!");
-        setCreatedId(result.id);
+        router.push(`/tin/${result.id}`);
         return;
       }
       toast.error(result.error);
+      // server đã xóa ảnh để không để lại rác → tải lại từ bản nén còn giữ trên trình duyệt
+      if (result.imagesRemoved) uploads.reuploadAll();
       if (result.fieldErrors) {
         for (const [path, message] of Object.entries(result.fieldErrors)) {
           form.setError(path as FieldPath<ListingFormValues>, { message });
         }
-        goTo(DETAILS_STEP);
+      }
+      if (result.step) {
+        goTo(STEP_INDEX[result.step]);
+        if (result.step !== "details") setStepError(result.error);
       }
     });
   }
 
-  function startOver() {
-    form.reset(DEFAULT_VALUES);
-    setMainSlug(null);
-    setSubSlug(null);
-    setCreatedId(null);
-    goTo(0);
-  }
-
-  if (createdId) {
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border p-8 text-center">
-        <CircleCheck className="size-12 text-green-600" strokeWidth={1.5} />
-        <h2 className="text-lg font-semibold">Tin của bạn đã được đăng</h2>
-        <p className="text-sm text-muted-foreground">Mã tin: {createdId}</p>
-        <div className="mt-2 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <Button className="h-11" onClick={startOver}>
-            Đăng tin khác
-          </Button>
-          <Button asChild variant="outline" className="h-11">
-            <Link href="/">Về trang chủ</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const preview = step === STEPS.length - 1 && schema ? schema.safeParse(form.getValues()) : undefined;
+  const preview = step === PREVIEW_STEP && schema ? schema.safeParse(form.getValues()) : undefined;
+  const notReady = step === PREVIEW_STEP ? (blockingError(IMAGES_STEP) ?? blockingError(LOCATION_STEP)) : undefined;
 
   return (
     <div className="space-y-6">
@@ -141,14 +149,25 @@ export function PostListingForm() {
           onSubChange={handleSubChange}
         />
       )}
-      {step === 1 && sub && <StepDetails sub={sub} form={form} />}
-      {step === 2 && <ComingSoon icon={ImageIcon} text="Phần tải ảnh sẽ có trong bản cập nhật tới. Bấm Tiếp tục để bỏ qua." />}
-      {step === 3 && <ComingSoon icon={MapPin} text="Phần chọn vị trí sẽ có trong bản cập nhật tới. Bấm Tiếp tục để bỏ qua." />}
-      {step === 4 && sub && preview?.success && <StepPreview sub={sub} data={preview.data} />}
-      {step === 4 && preview && !preview.success && (
+      {step === DETAILS_STEP && sub && <StepDetails sub={sub} form={form} />}
+      {step === IMAGES_STEP && sub && <StepImages uploads={uploads} required={imagesRequired(sub)} error={stepError} />}
+      {step === LOCATION_STEP && <StepLocation value={location} onChange={setLocation} error={stepError} />}
+      {step === PREVIEW_STEP && sub && preview?.success && (
+        <StepPreview
+          sub={sub}
+          data={preview.data}
+          coverUrl={uploads.items[0]?.previewUrl}
+          imageCount={uploads.items.length}
+          location={location}
+        />
+      )}
+      {step === PREVIEW_STEP && preview && !preview.success && (
         <p className="rounded-lg border border-destructive/50 p-4 text-sm text-destructive">
           Thông tin chưa hợp lệ. Vui lòng quay lại bước &quot;Thông tin&quot; để sửa.
         </p>
+      )}
+      {notReady && preview?.success && (
+        <p className="rounded-lg border border-destructive/50 p-4 text-sm text-destructive">{notReady}</p>
       )}
 
       <div className="flex gap-3 border-t pt-4">
@@ -157,7 +176,7 @@ export function PostListingForm() {
             <ArrowLeft /> Quay lại
           </Button>
         )}
-        {step < STEPS.length - 1 ? (
+        {step < PREVIEW_STEP ? (
           <Button type="button" className="ml-auto h-11 flex-1 sm:flex-none" onClick={handleNext} disabled={!sub}>
             Tiếp tục <ArrowRight />
           </Button>
@@ -166,7 +185,7 @@ export function PostListingForm() {
             type="button"
             className="ml-auto h-11 flex-1 sm:flex-none"
             onClick={handleSubmit}
-            disabled={submitting || !preview?.success}
+            disabled={submitting || !preview?.success || Boolean(notReady)}
           >
             {submitting && <Loader2 className="animate-spin" />}
             Đăng tin
