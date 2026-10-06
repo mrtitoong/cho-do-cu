@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, ImageIcon } from "lucide-react";
+import { ListingImage } from "@/components/listing-image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { displayName, LISTING_STATUS_LABELS, type MessageRow } from "@/lib/chat";
@@ -15,7 +16,7 @@ export type ChatListing = {
   title: string;
   priceText: string;
   status: string;
-  coverUrl: string | null;
+  coverPath: string | null;
 };
 
 type Props = {
@@ -79,9 +80,8 @@ function ListingCard({ listing }: { listing: ChatListing | null }) {
   return (
     <Link href={`/tin/${listing.id}`} className="flex items-center gap-3 border-b px-4 py-2 hover:bg-muted/60">
       <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
-        {listing.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- chuyển sang next/image ở giai đoạn 7
-          <img src={listing.coverUrl} alt="" className="size-full object-cover" />
+        {listing.coverPath ? (
+          <ListingImage path={listing.coverPath} sizes="48px" className="size-full" />
         ) : (
           <ImageIcon className="size-5" />
         )}

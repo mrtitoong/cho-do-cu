@@ -99,7 +99,7 @@ export function SearchPage({ categories }: Props) {
         <div className="min-w-0 flex-1">
           <CategoryChips value={filters.main} onChange={(main) => setFilters(withCategory(filters, main))} />
         </div>
-        <Button variant="outline" className="relative h-10 shrink-0 rounded-full px-3" onClick={() => setFilterOpen(true)}>
+        <Button variant="outline" className="relative h-11 shrink-0 rounded-full px-3" onClick={() => setFilterOpen(true)}>
           <SlidersHorizontal />
           <span className="hidden sm:inline">Bộ lọc</span>
           {activeCount > 0 && (
@@ -129,7 +129,7 @@ export function SearchPage({ categories }: Props) {
           <div className="flex min-h-11 shrink-0 items-center justify-between gap-2 px-4 pb-2 md:pt-2">
             <button
               type="button"
-              className="truncate text-left text-sm font-medium md:pointer-events-none"
+              className="min-h-11 truncate text-left text-sm font-medium md:pointer-events-none"
               onClick={() => setListOpen((o) => !o)}
             >
               {summary}

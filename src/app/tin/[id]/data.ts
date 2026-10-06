@@ -1,8 +1,8 @@
 import { cache } from "react";
-import { getSubCategory, type PriceUnit } from "@/config/categories";
+import { getSubCategory } from "@/config/categories";
 import type { SearchResultItem } from "@/components/search/use-search-listings";
 import { parseGeographyPoint } from "@/lib/listing-location";
-import { formatAttributeValue, formatListingPrice } from "@/lib/listing-schema";
+import { listingPriceText } from "@/lib/listing-schema";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -32,10 +32,7 @@ export const getListing = cache(async (id: string) => {
 
   const sub = data.category ? getSubCategory(data.category.slug) : undefined;
   const attributes = (data.attributes ?? {}) as Record<string, unknown>;
-  const salaryField = sub?.fields.find((f) => f.key === sub.priceFromField);
-  const priceText = salaryField
-    ? (formatAttributeValue(salaryField, attributes[salaryField.key]) ?? "Thỏa thuận")
-    : formatListingPrice(data.price, data.price_unit as PriceUnit);
+  const priceText = listingPriceText(sub, { ...data, attributes });
 
   return {
     ...data,

@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { loginUrl } from "@/lib/auth-paths";
@@ -51,29 +50,4 @@ export async function startConversation(listingId: string): Promise<ActionError>
     return { ok: false, error: "Không mở được cuộc trò chuyện, vui lòng thử lại." };
   }
   redirect(`/tin-nhan/${created.id}`);
-}
-
-/** Chủ tin đánh dấu tin đã bán (RLS chỉ cho chủ tin sửa). */
-export async function markListingSold(listingId: string): Promise<{ ok: true } | ActionError> {
-  if (!z.uuid().safeParse(listingId).success) return { ok: false, error: "Mã tin không hợp lệ." };
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Bạn cần đăng nhập." };
-
-  const { data, error } = await supabase
-    .from("listings")
-    .update({ status: "sold" })
-    .eq("id", listingId)
-    .eq("seller_id", user.id)
-    .select("id");
-  if (error || !data?.length) {
-    if (error) console.error("markListingSold:", error);
-    return { ok: false, error: "Không cập nhật được tin, vui lòng thử lại." };
-  }
-
-  revalidatePath(`/tin/${listingId}`);
-  return { ok: true };
 }

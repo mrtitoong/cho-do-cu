@@ -7,17 +7,24 @@ import { getMainCategory, MAIN_CATEGORIES, type MainCategorySlug } from "@/confi
 type Props = {
   mainSlug: MainCategorySlug | null;
   subSlug: string | null;
+  /** Sửa tin: chỉ được chọn danh mục con trong danh mục chính này */
+  lockedMain?: MainCategorySlug | null;
   onMainChange: (slug: MainCategorySlug) => void;
   onSubChange: (slug: string) => void;
 };
 
-export function StepCategory({ mainSlug, subSlug, onMainChange, onSubChange }: Props) {
+export function StepCategory({ mainSlug, subSlug, lockedMain, onMainChange, onSubChange }: Props) {
   const main = mainSlug ? getMainCategory(mainSlug) : undefined;
 
   return (
     <div className="space-y-6">
       <section>
         <h2 className="mb-3 font-semibold">Chọn danh mục chính</h2>
+        {lockedMain && (
+          <p className="-mt-2 mb-3 text-sm text-muted-foreground">
+            Không đổi được danh mục chính khi sửa tin, bạn vẫn có thể đổi danh mục con.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {MAIN_CATEGORIES.map((m) => {
             const active = m.slug === mainSlug;
@@ -26,11 +33,13 @@ export function StepCategory({ mainSlug, subSlug, onMainChange, onSubChange }: P
                 key={m.slug}
                 type="button"
                 onClick={() => onMainChange(m.slug)}
+                disabled={Boolean(lockedMain) && m.slug !== lockedMain}
                 aria-pressed={active}
                 className={cn(
                   "flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center text-sm font-medium transition-colors",
                   "hover:border-primary/50 hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                   active && "border-primary bg-primary/5 ring-1 ring-primary",
+                  "disabled:pointer-events-none disabled:opacity-40",
                 )}
               >
                 <m.icon className="size-10" strokeWidth={1.5} />

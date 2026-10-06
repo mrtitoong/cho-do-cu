@@ -184,7 +184,7 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
             {emailField}
             {noticeBox}
             {submitButton("Gửi link đặt lại mật khẩu")}
-            <Button type="button" variant="link" className="w-full" onClick={() => switchMode("login")}>
+            <Button type="button" variant="link" className="h-11 w-full" onClick={() => switchMode("login")}>
               Quay lại đăng nhập
             </Button>
           </form>
@@ -209,7 +209,7 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
         </div>
 
         <Tabs value={mode} onValueChange={(v) => switchMode(v as Mode)}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid h-11 w-full grid-cols-2">
             <TabsTrigger value="login">Đăng nhập</TabsTrigger>
             <TabsTrigger value="register">Đăng ký</TabsTrigger>
           </TabsList>
@@ -222,7 +222,7 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
                   <Label htmlFor="password">Mật khẩu</Label>
                   <button
                     type="button"
-                    className="text-sm text-primary hover:underline"
+                    className="-my-2.5 inline-flex min-h-11 items-center text-sm text-primary hover:underline"
                     onClick={() => switchMode("forgot")}
                   >
                     Quên mật khẩu?

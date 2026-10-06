@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { SiteHeader } from "@/components/layout/site-header";
 import { Toaster } from "@/components/ui/sonner";
 import { getSessionUser } from "@/lib/session";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const font = Be_Vietnam_Pro({
@@ -14,6 +15,8 @@ const font = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
   title: {
     default: "Chợ Đồ Cũ – Rao vặt theo bản đồ",
     template: "%s | Chợ Đồ Cũ",

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { listingImageUrl } from "@/lib/listing-images";
+import { ListingImage } from "@/components/listing-image";
 import { cn } from "@/lib/utils";
 
 type Props = { title: string; paths: string[] };
@@ -55,13 +55,13 @@ function Slides({
             className="size-full shrink-0 snap-center"
             aria-label={onOpen ? `Xem ảnh ${i + 1} toàn màn hình` : undefined}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- chuyển sang next/image ở giai đoạn 7 */}
-            <img
-              src={listingImageUrl(path)}
+            <ListingImage
+              path={path}
               alt={`${title} - ảnh ${i + 1}`}
-              loading={i === 0 ? "eager" : "lazy"}
-              draggable={false}
-              className={cn("size-full", fullscreen ? "object-contain" : "object-cover")}
+              sizes={fullscreen ? "100vw" : "(min-width: 1024px) 640px, (min-width: 768px) 60vw, 100vw"}
+              preload={i === 0 && !fullscreen}
+              className={cn("size-full", fullscreen && "bg-transparent")}
+              imgClassName={fullscreen ? "object-contain" : "object-cover"}
             />
           </button>
         ))}
@@ -131,8 +131,7 @@ export function ImageGallery({ title, paths }: Props) {
                 i === main.index ? "border-primary" : "border-transparent opacity-70 hover:opacity-100",
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- chuyển sang next/image ở giai đoạn 7 */}
-              <img src={listingImageUrl(path)} alt="" loading="lazy" className="size-full object-cover" />
+              <ListingImage path={path} sizes="64px" className="size-full" />
             </button>
           ))}
         </div>

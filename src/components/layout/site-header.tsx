@@ -16,7 +16,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           <SearchBox />
         </div>
         <nav className="ml-auto hidden items-center gap-2 md:flex">
-          <Button asChild variant="ghost" className="h-10 px-3">
+          <Button asChild variant="ghost" className="h-11 px-3">
             <Link href="/tin-nhan">
               <span className="relative">
                 <MessageCircle />
@@ -25,7 +25,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               Tin nhắn
             </Link>
           </Button>
-          <Button asChild className="h-10 px-4">
+          <Button asChild className="h-11 px-4">
             <Link href="/dang-tin">
               <PlusCircle /> Đăng tin
             </Link>

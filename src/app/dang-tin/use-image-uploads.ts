@@ -4,16 +4,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { LISTING_IMAGES_BUCKET, listingImageFolder, MAX_LISTING_IMAGES } from "@/lib/listing-images";
+import { LISTING_IMAGES_BUCKET, listingImageFolder, listingImageUrl, MAX_LISTING_IMAGES } from "@/lib/listing-images";
 import { compressImage, uploadWithProgress } from "./image-upload";
 
 export type UploadStatus = "compressing" | "uploading" | "done" | "error";
 
 export type UploadItem = {
   id: string;
-  file: File;
-  /** URL tạm (blob:) để xem trước */
+  /** File gốc người dùng chọn; không có với ảnh đã lưu từ trước (trang sửa tin) */
+  file?: File;
+  /** URL xem trước: blob: với ảnh mới chọn, URL công khai với ảnh đã lưu */
   previewUrl: string;
+  /** Ảnh đã lưu của tin đang sửa: bỏ ở form thì chưa xóa file ngay, server dọn khi lưu thay đổi */
+  existing?: boolean;
   /** Ảnh đã nén, giữ lại để upload lại khi cần */
   blob?: Blob;
   ext?: "webp" | "jpg";
@@ -25,13 +28,26 @@ export type UploadItem = {
 };
 
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === "AbortError";
+const revokePreview = (item: UploadItem) => {
+  if (item.previewUrl.startsWith("blob:")) URL.revokeObjectURL(item.previewUrl);
+};
 
 /**
  * Quản lý ảnh của tin đang đăng: nén → upload vào {user_id}/{listing_id}/{uuid}.webp,
  * theo dõi tiến trình từng ảnh, xóa, thử lại, sắp xếp.
+ * `initialPaths`: ảnh đã lưu của tin đang sửa.
  */
-export function useImageUploads(userId: string, listingId: string) {
-  const [items, setItems] = useState<UploadItem[]>([]);
+export function useImageUploads(userId: string, listingId: string, initialPaths: string[] = []) {
+  const [items, setItems] = useState<UploadItem[]>(() =>
+    initialPaths.map((path) => ({
+      id: path,
+      previewUrl: listingImageUrl(path),
+      existing: true,
+      status: "done",
+      progress: 100,
+      path,
+    })),
+  );
   const supabase = useMemo(() => createClient(), []);
   const aborts = useRef(new Map<string, () => void>());
   const removed = useRef(new Set<string>());
@@ -46,7 +62,7 @@ export function useImageUploads(userId: string, listingId: string) {
     const pending = aborts.current;
     return () => {
       pending.forEach((abort) => abort());
-      itemsRef.current.forEach((it) => URL.revokeObjectURL(it.previewUrl));
+      itemsRef.current.forEach(revokePreview);
     };
   }, []);
 
@@ -59,6 +75,7 @@ export function useImageUploads(userId: string, listingId: string) {
     try {
       let { blob, ext } = item;
       if (!blob || !ext) {
+        if (!item.file) return; // ảnh đã lưu từ trước, không cần upload
         patch(id, { status: "compressing", progress: 0, error: undefined });
         ({ blob, ext } = await compressImage(item.file));
         if (removed.current.has(id)) return;
@@ -112,10 +129,11 @@ export function useImageUploads(userId: string, listingId: string) {
     if (!item) return;
     removed.current.add(id);
     aborts.current.get(id)?.();
-    URL.revokeObjectURL(item.previewUrl);
+    revokePreview(item);
     setItems((list) => list.filter((it) => it.id !== id));
-    // Xóa file đã upload; lỡ lỗi thì file thừa sẽ được dọn khi đăng tin
-    if (item.path) void supabase.storage.from(LISTING_IMAGES_BUCKET).remove([item.path]);
+    // Xóa file vừa upload; lỡ lỗi thì file thừa sẽ được dọn khi đăng/lưu tin.
+    // Ảnh đã lưu từ trước thì giữ file đến khi bấm lưu (người dùng có thể bỏ dở việc sửa).
+    if (item.path && !item.existing) void supabase.storage.from(LISTING_IMAGES_BUCKET).remove([item.path]);
   }
 
   function retry(id: string) {
@@ -133,7 +151,7 @@ export function useImageUploads(userId: string, listingId: string) {
 
   /** Upload lại toàn bộ ảnh (server đã xóa file sau khi đăng tin lỗi). Ảnh nén sẵn nên không phải nén lại. */
   function reuploadAll() {
-    setItems((list) => list.map((it) => ({ ...it, path: undefined })));
+    setItems((list) => list.map((it) => (it.existing ? it : { ...it, path: undefined })));
     items.forEach((it) => void process(it));
   }
 

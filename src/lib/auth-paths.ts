@@ -1,8 +1,11 @@
 /** Các đường dẫn bắt buộc đăng nhập (kể cả trang con). */
 export const PROTECTED_PATHS = ["/dang-tin", "/tin-nhan", "/tin-cua-toi", "/ho-so"];
 
+/** Trang sửa tin /tin/[id]/sua */
+const EDIT_LISTING_RE = /^\/tin\/[^/]+\/sua\/?$/;
+
 export function isProtectedPath(pathname: string) {
-  return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`)) || EDIT_LISTING_RE.test(pathname);
 }
 
 /** Chỉ chấp nhận đường dẫn nội bộ để tránh open redirect. */

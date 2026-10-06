@@ -12,7 +12,7 @@ import { getSubCategory, type MainCategorySlug } from "@/config/categories";
 import { imagesRequired } from "@/lib/listing-images";
 import type { ListingLocation } from "@/lib/listing-location";
 import { buildZodSchema, emptyAttributes, type ListingFormValues } from "@/lib/listing-schema";
-import { createListing } from "./actions";
+import { createListing, updateListing } from "./actions";
 import { StepCategory } from "./step-category";
 import { StepDetails } from "./step-details";
 import { StepImages } from "./step-images";
@@ -35,15 +35,28 @@ const DEFAULT_VALUES: ListingFormValues = {
   attributes: {},
 };
 
-export function PostListingForm({ userId }: { userId: string }) {
+/** Dữ liệu tin đang sửa (trang /tin/[id]/sua). */
+export type EditingListing = {
+  id: string;
+  subSlug: string;
+  values: ListingFormValues;
+  imagePaths: string[];
+  location: ListingLocation | null;
+};
+
+type Props = { userId: string; editing?: EditingListing };
+
+export function PostListingForm({ userId, editing }: Props) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [mainSlug, setMainSlug] = useState<MainCategorySlug | null>(null);
-  const [subSlug, setSubSlug] = useState<string | null>(null);
+  // Sửa tin: mở thẳng bước Thông tin; vẫn quay lại đổi được danh mục con, nhưng khóa danh mục chính
+  const [step, setStep] = useState(editing ? DETAILS_STEP : 0);
+  const lockedMain = editing ? (getSubCategory(editing.subSlug)?.parent ?? null) : null;
+  const [mainSlug, setMainSlug] = useState<MainCategorySlug | null>(lockedMain);
+  const [subSlug, setSubSlug] = useState<string | null>(editing?.subSlug ?? null);
   // id của tin sinh sẵn để upload ảnh vào {user_id}/{listing_id}/ trước khi tin được ghi vào DB
-  const [listingId] = useState(() => crypto.randomUUID());
-  const uploads = useImageUploads(userId, listingId);
-  const [location, setLocation] = useState<ListingLocation | null>(null);
+  const [listingId] = useState(() => editing?.id ?? crypto.randomUUID());
+  const uploads = useImageUploads(userId, listingId, editing?.imagePaths);
+  const [location, setLocation] = useState<ListingLocation | null>(editing?.location ?? null);
   const [stepError, setStepError] = useState<string | undefined>();
   const [submitting, startSubmit] = useTransition();
 
@@ -54,7 +67,7 @@ export function PostListingForm({ userId }: { userId: string }) {
     () => (schema ? (zodResolver(schema) as unknown as Resolver<ListingFormValues>) : undefined),
     [schema],
   );
-  const form = useForm<ListingFormValues>({ defaultValues: DEFAULT_VALUES, resolver, mode: "onTouched" });
+  const form = useForm<ListingFormValues>({ defaultValues: editing?.values ?? DEFAULT_VALUES, resolver, mode: "onTouched" });
 
   function goTo(next: number) {
     setStep(next);
@@ -63,6 +76,7 @@ export function PostListingForm({ userId }: { userId: string }) {
   }
 
   function handleMainChange(slug: MainCategorySlug) {
+    if (lockedMain && slug !== lockedMain) return;
     setMainSlug(slug);
     if (sub && sub.parent !== slug) handleSubChange(null);
   }
@@ -99,21 +113,16 @@ export function PostListingForm({ userId }: { userId: string }) {
   function handleSubmit() {
     if (!subSlug) return;
     startSubmit(async () => {
-      const result = await createListing({
-        listingId,
-        categorySlug: subSlug,
-        values: form.getValues(),
-        imagePaths: uploads.paths,
-        location,
-      });
+      const input = { listingId, categorySlug: subSlug, values: form.getValues(), imagePaths: uploads.paths, location };
+      const result = editing ? await updateListing(input) : await createListing(input);
       if (result.ok) {
-        toast.success("Đăng tin thành công!");
+        toast.success(editing ? "Đã lưu thay đổi" : "Đăng tin thành công!");
         router.push(`/tin/${result.id}`);
         return;
       }
       toast.error(result.error);
       // server đã xóa ảnh để không để lại rác → tải lại từ bản nén còn giữ trên trình duyệt
-      if (result.imagesRemoved) uploads.reuploadAll();
+      if ("imagesRemoved" in result && result.imagesRemoved) uploads.reuploadAll();
       if (result.fieldErrors) {
         for (const [path, message] of Object.entries(result.fieldErrors)) {
           form.setError(path as FieldPath<ListingFormValues>, { message });
@@ -145,6 +154,7 @@ export function PostListingForm({ userId }: { userId: string }) {
         <StepCategory
           mainSlug={mainSlug}
           subSlug={subSlug}
+          lockedMain={lockedMain}
           onMainChange={handleMainChange}
           onSubChange={handleSubChange}
         />
@@ -188,7 +198,7 @@ export function PostListingForm({ userId }: { userId: string }) {
             disabled={submitting || !preview?.success || Boolean(notReady)}
           >
             {submitting && <Loader2 className="animate-spin" />}
-            Đăng tin
+            {editing ? "Lưu thay đổi" : "Đăng tin"}
           </Button>
         )}
       </div>

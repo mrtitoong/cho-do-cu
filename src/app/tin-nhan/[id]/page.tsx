@@ -4,7 +4,6 @@ import { z } from "zod";
 import { getListing } from "@/app/tin/[id]/data";
 import { requireUser } from "@/lib/auth";
 import { MESSAGE_COLUMNS, MESSAGE_PAGE_SIZE } from "@/lib/chat";
-import { listingImageUrl } from "@/lib/listing-images";
 import { createClient } from "@/lib/supabase/server";
 import { ChatView } from "./chat-view";
 
@@ -38,7 +37,6 @@ export default async function ConversationPage({ params }: PageProps<"/tin-nhan/
   ]);
   if (messagesError) console.error("messages:", messagesError);
 
-  const cover = listing?.images[0]?.path;
   return (
     <ChatView
       key={id}
@@ -51,7 +49,7 @@ export default async function ConversationPage({ params }: PageProps<"/tin-nhan/
           title: listing.title,
           priceText: listing.priceText,
           status: listing.status,
-          coverUrl: cover ? listingImageUrl(cover) : null,
+          coverPath: listing.images[0]?.path ?? null,
         }
       }
       initialMessages={(messages ?? []).reverse()}

@@ -186,6 +186,42 @@ export function toListingRow(sub: SubCategory, data: ParsedListing) {
   };
 }
 
+/** Ngược với toListingRow: tin đã lưu → giá trị thô của form (dùng cho trang sửa tin). */
+export function toFormValues(
+  sub: SubCategory,
+  listing: { title: string; description: string; price: number | null; attributes: Record<string, unknown> },
+): ListingFormValues {
+  const numberText = (field: CategoryField, v: unknown) => {
+    if (typeof v !== "number") return "";
+    if (field.type === "year") return String(v);
+    return field.decimal ? String(v).replace(".", ",") : formatNumber(v);
+  };
+
+  const attributes = emptyAttributes(sub);
+  for (const field of sub.fields) {
+    const value = listing.attributes[field.key];
+    if (value === undefined || value === null) continue;
+    if (field.type === "range") {
+      const { min, max } = value as RangeValue;
+      attributes[field.key] = { min: numberText(field, min), max: numberText(field, max) };
+    } else if (field.type === "number" || field.type === "year") {
+      attributes[field.key] = numberText(field, value);
+    } else {
+      attributes[field.key] = String(value);
+    }
+  }
+
+  // price null = "Thỏa thuận" (Việc làm: lương thỏa thuận thì không lưu mức lương, price cũng null)
+  const negotiable = listing.price === null;
+  return {
+    title: listing.title,
+    description: listing.description,
+    negotiable,
+    price: negotiable || sub.priceFromField ? "" : formatNumber(listing.price!),
+    attributes,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Hiển thị
 // ---------------------------------------------------------------------------
@@ -195,6 +231,17 @@ export function formatListingPrice(price: number | null, unit: PriceUnit, option
   if (price === null) return "Thỏa thuận";
   const text = options.short ? formatPriceShort(price) : formatPrice(price);
   return unit === "month" ? `${text}/tháng` : text;
+}
+
+/** Giá của tin đã lưu để hiển thị; danh mục Việc làm hiện mức lương từ attributes. */
+export function listingPriceText(
+  sub: SubCategory | undefined,
+  listing: { price: number | null; price_unit: string; attributes: Record<string, unknown> },
+  options: { short?: boolean } = {},
+) {
+  const salaryField = sub?.fields.find((f) => f.key === sub.priceFromField);
+  if (salaryField) return formatAttributeValue(salaryField, listing.attributes[salaryField.key]) ?? "Thỏa thuận";
+  return formatListingPrice(listing.price, listing.price_unit as PriceUnit, options);
 }
 
 /** Giá trị một trường riêng để hiển thị; null nếu trống. */

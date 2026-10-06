@@ -10,7 +10,7 @@ type Props = {
 };
 
 const chipClass =
-  "flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap transition-colors";
+  "flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap transition-colors";
 
 /** Thanh chip danh mục chính, cuộn ngang trên điện thoại. */
 export function CategoryChips({ value, onChange }: Props) {

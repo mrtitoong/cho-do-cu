@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { loginUrl } from "@/lib/auth-paths";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { markListingSold, startConversation } from "./actions";
+import { setListingStatus } from "@/app/tin-cua-toi/actions";
+import { startConversation } from "./actions";
 
 type Props = {
   listingId: string;
@@ -138,7 +139,7 @@ function OwnerButtons({ listingId, status, row }: Props & { row?: boolean }) {
 
   function markSold() {
     startTransition(async () => {
-      const result = await markListingSold(listingId);
+      const result = await setListingStatus(listingId, "sold");
       if (result.ok) toast.success("Đã đánh dấu tin là đã bán");
       else toast.error(result.error);
     });

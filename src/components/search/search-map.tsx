@@ -119,7 +119,7 @@ export default function SearchMap({ center, radiusKm, items, mainSlugById, hover
 
       {moved && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-[1000] flex justify-center">
-          <Button onClick={searchHere} className="pointer-events-auto h-10 rounded-full px-4 shadow-lg">
+          <Button onClick={searchHere} className="pointer-events-auto h-11 rounded-full px-4 shadow-lg">
             <Search /> Tìm trong khu vực này
           </Button>
         </div>

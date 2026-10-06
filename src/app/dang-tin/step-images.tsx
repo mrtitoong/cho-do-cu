@@ -140,7 +140,7 @@ function SortableImage({ item, index, onRemove, onRetry }: ItemProps) {
       {...listeners}
       aria-label={`Ảnh ${index + 1}${index === 0 ? " (ảnh bìa)" : ""}`}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- ảnh xem trước là blob: URL cục bộ */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- ảnh xem trước chủ yếu là blob: URL cục bộ, next/image không tối ưu được */}
       <img src={item.previewUrl} alt="" className="size-full object-cover" draggable={false} />
 
       {index === 0 && (
@@ -168,7 +168,7 @@ function SortableImage({ item, index, onRemove, onRetry }: ItemProps) {
             type="button"
             onClick={onRetry}
             {...noDrag}
-            className="flex min-h-8 items-center gap-1 rounded bg-white px-2 font-medium text-black"
+            className="flex min-h-11 items-center gap-1 rounded bg-white px-3 font-medium text-black"
           >
             <RotateCw className="size-3" /> Thử lại
           </button>
@@ -180,9 +180,11 @@ function SortableImage({ item, index, onRemove, onRetry }: ItemProps) {
         onClick={onRemove}
         {...noDrag}
         aria-label={`Xóa ảnh ${index + 1}`}
-        className="absolute top-1 right-1 flex size-8 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
+        className="group/remove absolute top-0 right-0 flex size-11 items-start justify-end p-1"
       >
-        <X className="size-4" />
+        <span className="flex size-8 items-center justify-center rounded-full bg-black/70 text-white group-hover/remove:bg-black">
+          <X className="size-4" />
+        </span>
       </button>
     </li>
   );

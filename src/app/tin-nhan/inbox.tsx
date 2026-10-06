@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ImageIcon, Loader2, MessageCircle } from "lucide-react";
 import { useMessageEvents } from "@/components/chat/message-events-provider";
+import { ListingImage } from "@/components/listing-image";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { displayName, formatInboxTime, type InboxItem } from "@/lib/chat";
-import { listingImageUrl } from "@/lib/listing-images";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -62,7 +62,7 @@ export function Inbox({ userId, initialItems, initialError }: Props) {
       <div className="space-y-3 border-b p-4">
         <h1 className="text-xl font-bold tracking-tight">Tin nhắn</h1>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList className="h-10 w-full">
+          <TabsList className="h-11 w-full">
             {FILTERS.map((f) => (
               <TabsTrigger key={f.value} value={f.value}>
                 {f.label}
@@ -110,8 +110,7 @@ function InboxRow({ item, userId, active }: { item: InboxItem; userId: string; a
     >
       <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
         {item.listing_cover_path ? (
-          // eslint-disable-next-line @next/next/no-img-element -- chuyển sang next/image ở giai đoạn 7
-          <img src={listingImageUrl(item.listing_cover_path)} alt="" className="size-full object-cover" loading="lazy" />
+          <ListingImage path={item.listing_cover_path} sizes="56px" className="size-full" />
         ) : (
           <ImageIcon className="size-5" />
         )}

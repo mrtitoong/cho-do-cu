@@ -23,7 +23,7 @@ function initials(user: SessionUser) {
 export function UserMenu({ user }: { user: SessionUser | null }) {
   if (!user) {
     return (
-      <Button asChild variant="outline" className="h-10 px-4">
+      <Button asChild variant="outline" className="h-11 px-4">
         <Link href="/dang-nhap">Đăng nhập</Link>
       </Button>
     );
@@ -35,7 +35,7 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
         <button
           type="button"
           aria-label="Menu tài khoản"
-          className="flex size-10 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <Avatar className="size-9">
             {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}

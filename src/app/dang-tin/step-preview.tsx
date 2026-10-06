@@ -35,7 +35,7 @@ export function StepPreview({ sub, data, coverUrl, imageCount, location }: Props
       <article className="overflow-hidden rounded-xl border">
         {coverUrl ? (
           <div className="relative aspect-[16/9] bg-muted">
-            {/* eslint-disable-next-line @next/next/no-img-element -- ảnh xem trước là blob: URL cục bộ */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- ảnh xem trước chủ yếu là blob: URL cục bộ, next/image không tối ưu được */}
             <img src={coverUrl} alt="Ảnh bìa" className="size-full object-cover" />
             {imageCount > 1 && (
               <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded bg-black/70 px-2 py-0.5 text-xs text-white">
