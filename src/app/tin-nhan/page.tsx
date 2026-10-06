@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
-import { PageTitle } from "@/components/layout/page-title";
-import { requireUser } from "@/lib/auth";
+import { MessageCircle } from "lucide-react";
 
 export const metadata: Metadata = { title: "Tin nhắn" };
 
-export default async function MessagesPage() {
-  await requireUser("/tin-nhan");
-
+/** Khung bên phải khi chưa chọn cuộc trò chuyện (chỉ hiện trên máy tính; hộp thư nằm trong layout). */
+export default function MessagesPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6">
-      <PageTitle title="Tin nhắn" description="Các cuộc trò chuyện với người mua và người bán." />
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-muted-foreground">
+      <MessageCircle className="size-12" />
+      <p>Chọn một cuộc trò chuyện để xem tin nhắn.</p>
     </div>
   );
 }

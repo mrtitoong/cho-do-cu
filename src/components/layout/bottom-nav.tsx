@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ListChecks, MessageCircle, Plus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UnreadBadge } from "@/components/chat/unread-badge";
 
 const items = [
   { href: "/", label: "Trang chủ", icon: Home },
@@ -41,7 +42,10 @@ export function BottomNav({ loggedIn }: { loggedIn: boolean }) {
                     <Icon className="size-5" />
                   </span>
                 ) : (
-                  <Icon className="size-5" />
+                  <span className="relative">
+                    <Icon className="size-5" />
+                    {href === "/tin-nhan" && <UnreadBadge />}
+                  </span>
                 )}
                 <span>{label}</span>
               </Link>

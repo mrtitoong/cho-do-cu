@@ -305,6 +305,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_inbox: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          last_at: string
+          last_body: string
+          last_sender_id: string
+          listing_cover_path: string
+          listing_id: string
+          listing_status: string
+          listing_title: string
+          other_avatar_url: string
+          other_id: string
+          other_name: string
+          role: string
+          unread_count: number
+        }[]
+      }
       get_my_listing_location: {
         Args: { p_listing_id: string }
         Returns: {
@@ -315,6 +333,11 @@ export type Database = {
       get_my_phone: { Args: never; Returns: string }
       get_seller_phone: { Args: { p_listing_id: string }; Returns: string }
       get_seller_phone_hint: { Args: { p_listing_id: string }; Returns: string }
+      get_unread_conversation_count: { Args: never; Returns: number }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: number
+      }
       search_listings: {
         Args: {
           p_attr_filters?: Json

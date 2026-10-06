@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
+import { MessageEventsProvider } from "@/components/chat/message-events-provider";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { SiteHeader } from "@/components/layout/site-header";
 import { Toaster } from "@/components/ui/sonner";
@@ -32,11 +33,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="vi" className={`${font.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <SiteHeader user={user} />
-        <main className="flex flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-          {children}
-        </main>
-        <BottomNav loggedIn={Boolean(user)} />
+        <MessageEventsProvider userId={user?.id ?? null}>
+          <SiteHeader user={user} />
+          <main className="flex flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+            {children}
+          </main>
+          <BottomNav loggedIn={Boolean(user)} />
+        </MessageEventsProvider>
         <Toaster position="top-center" />
       </body>
     </html>

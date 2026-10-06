@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MessageCircle, PlusCircle } from "lucide-react";
 import type { SessionUser } from "@/lib/session";
+import { UnreadBadge } from "@/components/chat/unread-badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./logo";
 import { SearchBox } from "./search-box";
@@ -17,7 +18,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         <nav className="ml-auto hidden items-center gap-2 md:flex">
           <Button asChild variant="ghost" className="h-10 px-3">
             <Link href="/tin-nhan">
-              <MessageCircle /> Tin nhắn
+              <span className="relative">
+                <MessageCircle />
+                <UnreadBadge />
+              </span>
+              Tin nhắn
             </Link>
           </Button>
           <Button asChild className="h-10 px-4">
