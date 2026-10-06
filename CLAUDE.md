@@ -162,7 +162,7 @@ Hoàn thiện Bước 3 (Ảnh) và Bước 4 (Vị trí) của form /dang-tin.
 - Xem trước dạng lưới, kéo để sắp xếp, ảnh đầu tiên là ảnh bìa, nút xóa từng ảnh.
 
 Vị trí:
-- Bản đồ Leaflet + OpenStreetMap, mặc định ở trung tâm [THÀNH PHỐ CỦA BẠN].
+- Bản đồ Leaflet + OpenStreetMap, mặc định ở trung tâm [Hà Nội].
   Lưu ý: Leaflet cần import động (next/dynamic, ssr: false).
 - Nút "Dùng vị trí hiện tại" (Geolocation API), xử lý trường hợp bị từ chối quyền.
 - Ô tìm địa chỉ dùng Nominatim (giới hạn countrycodes=vn, chờ 500 ms sau khi ngừng gõ, gửi kèm header Referer).

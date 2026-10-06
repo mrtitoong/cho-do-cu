@@ -44,13 +44,17 @@ export function ListingCard({
   mainSlug,
   onHover,
 }: Props & { onHover?: (id: string | null) => void }) {
+  // Chỉ gắn sự kiện khi có onHover → dùng được cả trong Server Component (VD "Tin tương tự")
+  const hoverProps = onHover && {
+    onMouseEnter: () => onHover(item.id),
+    onMouseLeave: () => onHover(null),
+    onFocus: () => onHover(item.id),
+    onBlur: () => onHover(null),
+  };
   return (
     <Link
       href={`/tin/${item.id}`}
-      onMouseEnter={() => onHover?.(item.id)}
-      onMouseLeave={() => onHover?.(null)}
-      onFocus={() => onHover?.(item.id)}
-      onBlur={() => onHover?.(null)}
+      {...hoverProps}
       className="flex gap-3 rounded-xl p-2 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
     >
       <Cover item={item} mainSlug={mainSlug} className="size-24 shrink-0 rounded-lg sm:h-24 sm:w-32" />

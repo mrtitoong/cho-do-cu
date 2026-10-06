@@ -314,6 +314,7 @@ export type Database = {
       }
       get_my_phone: { Args: never; Returns: string }
       get_seller_phone: { Args: { p_listing_id: string }; Returns: string }
+      get_seller_phone_hint: { Args: { p_listing_id: string }; Returns: string }
       search_listings: {
         Args: {
           p_attr_filters?: Json
