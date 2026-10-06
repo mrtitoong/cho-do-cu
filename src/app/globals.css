@@ -131,3 +131,17 @@
     @apply font-sans;
   }
 }
+/* Thẻ tin trong popup ghim bản đồ (trang chủ) */
+.listing-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.listing-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+  font: inherit;
+}
+.leaflet-container .listing-popup a {
+  color: var(--foreground);
+}

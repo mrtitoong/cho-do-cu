@@ -24,3 +24,24 @@ export function formatPriceShort(n: number) {
   if (n >= 1_000) return `${shortFormat.format(n / 1_000)} nghìn`;
   return formatPrice(n);
 }
+
+/** Khoảng cách: 350 → "350 m", 1234 → "1,2 km". */
+export function formatDistance(meters: number) {
+  if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10)} m`;
+  return `${shortFormat.format(Math.round(meters / 100) / 10)} km`;
+}
+
+/** Thời gian tương đối: "Vừa xong", "15 phút trước", "3 giờ trước", "2 ngày trước"... */
+export function formatTimeAgo(date: string | Date, now = Date.now()) {
+  const seconds = Math.max(0, (now - new Date(date).getTime()) / 1000);
+  const units: [limit: number, size: number, label: string][] = [
+    [60 * 60, 60, "phút"],
+    [24 * 60 * 60, 60 * 60, "giờ"],
+    [30 * 24 * 60 * 60, 24 * 60 * 60, "ngày"],
+    [365 * 24 * 60 * 60, 30 * 24 * 60 * 60, "tháng"],
+    [Infinity, 365 * 24 * 60 * 60, "năm"],
+  ];
+  if (seconds < 60) return "Vừa xong";
+  const [, size, label] = units.find(([limit]) => seconds < limit)!;
+  return `${Math.floor(seconds / size)} ${label} trước`;
+}

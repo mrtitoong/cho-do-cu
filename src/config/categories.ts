@@ -78,6 +78,8 @@ export type MainCategory = {
   slug: MainCategorySlug;
   name: string;
   icon: LucideIcon;
+  /** Màu ghim trên bản đồ và chip danh mục */
+  color: string;
   subcategories: SubCategory[];
 };
 
@@ -254,11 +256,20 @@ const otherFields: CategoryField[] = [
 type SubInput = Omit<SubCategory, "parent" | "priceLabel" | "priceUnit"> &
   Partial<Pick<SubCategory, "priceLabel" | "priceUnit">>;
 
+const MAIN_COLORS: Record<MainCategorySlug, string> = {
+  "bat-dong-san": "#16a34a",
+  "viec-lam": "#7c3aed",
+  "xe-co": "#2563eb",
+  "do-dien-tu": "#0891b2",
+  "san-pham-khac": "#d97706",
+};
+
 function main(slug: MainCategorySlug, name: string, icon: LucideIcon, subs: SubInput[]): MainCategory {
   return {
     slug,
     name,
     icon,
+    color: MAIN_COLORS[slug],
     subcategories: subs.map((s) => ({ priceLabel: "Giá bán", priceUnit: "total", ...s, parent: slug })),
   };
 }
@@ -361,6 +372,34 @@ export function getMainCategory(slug: string): MainCategory | undefined {
 
 export function getSubCategory(slug: string): SubCategory | undefined {
   return SUB_BY_SLUG.get(slug);
+}
+
+/**
+ * Các trường dùng làm bộ lọc riêng: của danh mục con nếu đã chọn, nếu chỉ chọn danh mục chính thì
+ * gộp các trường filterable của mọi danh mục con (trùng key thì gộp options, ví dụ hãng xe máy + ô tô).
+ */
+export function getFilterFields(mainSlug?: string, subSlug?: string): CategoryField[] {
+  const sub = subSlug ? getSubCategory(subSlug) : undefined;
+  if (sub) return sub.fields.filter((f) => f.filterable);
+
+  const mainCat = mainSlug ? getMainCategory(mainSlug) : undefined;
+  if (!mainCat) return [];
+
+  const byKey = new Map<string, CategoryField>();
+  for (const field of mainCat.subcategories.flatMap((s) => s.fields)) {
+    if (!field.filterable) continue;
+    const existing = byKey.get(field.key);
+    if (!existing) {
+      byKey.set(field.key, field);
+    } else if (existing.type === "select" && field.type === "select") {
+      const options = [...(existing.options ?? [])];
+      for (const o of field.options ?? []) if (!options.some((x) => x.value === o.value)) options.push(o);
+      // "Khác" luôn để cuối
+      options.sort((a, b) => Number(a.value === "khac") - Number(b.value === "khac"));
+      byKey.set(field.key, { ...existing, options });
+    }
+  }
+  return [...byKey.values()];
 }
 
 /** Nhãn giá và price_unit thực tế, phụ thuộc vào trường "Hình thức" (Bán / Cho thuê). */

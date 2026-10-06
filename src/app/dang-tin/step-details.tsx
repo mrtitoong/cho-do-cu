@@ -15,7 +15,7 @@ import {
 } from "@/lib/listing-schema";
 import { AttributeField, shortMoney } from "./attribute-field";
 import { FormField, WithUnit } from "./form-field";
-import { NumberInput } from "./number-input";
+import { NumberInput } from "@/components/number-input";
 
 type Props = { sub: SubCategory; form: UseFormReturn<ListingFormValues> };
 

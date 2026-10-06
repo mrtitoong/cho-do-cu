@@ -7,7 +7,7 @@ import type { CategoryField } from "@/config/categories";
 import { formatPriceShort, parseDigits } from "@/lib/format";
 import type { ListingFormValues, RangeInput } from "@/lib/listing-schema";
 import { FormField, WithUnit } from "./form-field";
-import { NumberInput } from "./number-input";
+import { NumberInput } from "@/components/number-input";
 
 /** Lỗi của ô thường hoặc của ô khoảng (lỗi nằm ở .min / .max). */
 function errorMessage(error: FieldError | undefined) {
