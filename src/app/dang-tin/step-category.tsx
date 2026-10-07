@@ -1,20 +1,30 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { CategoryIcon } from "@/components/category-icon";
+import { findMainCategory, type CategoryTree } from "@/lib/category-tree";
 import { cn } from "@/lib/utils";
-import { getMainCategory, MAIN_CATEGORIES, type MainCategorySlug } from "@/config/categories";
 
 type Props = {
-  mainSlug: MainCategorySlug | null;
+  categories: CategoryTree;
+  mainSlug: string | null;
   subSlug: string | null;
   /** Sửa tin: chỉ được chọn danh mục con trong danh mục chính này */
-  lockedMain?: MainCategorySlug | null;
-  onMainChange: (slug: MainCategorySlug) => void;
+  lockedMain?: string | null;
+  onMainChange: (slug: string) => void;
   onSubChange: (slug: string) => void;
 };
 
-export function StepCategory({ mainSlug, subSlug, lockedMain, onMainChange, onSubChange }: Props) {
-  const main = mainSlug ? getMainCategory(mainSlug) : undefined;
+export function StepCategory({ categories, mainSlug, subSlug, lockedMain, onMainChange, onSubChange }: Props) {
+  const main = findMainCategory(categories, mainSlug);
+
+  if (categories.length === 0) {
+    return (
+      <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+        Hiện chưa có danh mục nào nhận tin đăng. Vui lòng quay lại sau.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -26,7 +36,7 @@ export function StepCategory({ mainSlug, subSlug, lockedMain, onMainChange, onSu
           </p>
         )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {MAIN_CATEGORIES.map((m) => {
+          {categories.map((m) => {
             const active = m.slug === mainSlug;
             return (
               <button
@@ -42,7 +52,7 @@ export function StepCategory({ mainSlug, subSlug, lockedMain, onMainChange, onSu
                   "disabled:pointer-events-none disabled:opacity-40",
                 )}
               >
-                <m.icon className="size-10" strokeWidth={1.5} />
+                <CategoryIcon name={m.icon} className="size-10" strokeWidth={1.5} />
                 {m.name}
               </button>
             );
@@ -68,7 +78,7 @@ export function StepCategory({ mainSlug, subSlug, lockedMain, onMainChange, onSu
                     active && "border-primary bg-primary/5 font-medium",
                   )}
                 >
-                  <s.icon className="size-5 shrink-0 text-muted-foreground" />
+                  <CategoryIcon name={s.icon} className="size-5 shrink-0 text-muted-foreground" />
                   <span className="flex-1">{s.name}</span>
                   {active && <Check className="size-4 text-primary" />}
                 </button>

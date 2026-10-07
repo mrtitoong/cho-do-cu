@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { getSubCategory, type MainCategorySlug } from "@/config/categories";
+import { findSubCategory, type CategoryTree } from "@/lib/category-tree";
 import { imagesRequired } from "@/lib/listing-images";
 import type { ListingLocation } from "@/lib/listing-location";
 import { buildZodSchema, emptyAttributes, type ListingFormValues } from "@/lib/listing-schema";
@@ -44,14 +44,19 @@ export type EditingListing = {
   location: ListingLocation | null;
 };
 
-type Props = { userId: string; editing?: EditingListing };
+type Props = {
+  userId: string;
+  /** Cây danh mục đọc từ DB (getCategoryTree) */
+  categories: CategoryTree;
+  editing?: EditingListing;
+};
 
-export function PostListingForm({ userId, editing }: Props) {
+export function PostListingForm({ userId, categories, editing }: Props) {
   const router = useRouter();
   // Sửa tin: mở thẳng bước Thông tin; vẫn quay lại đổi được danh mục con, nhưng khóa danh mục chính
   const [step, setStep] = useState(editing ? DETAILS_STEP : 0);
-  const lockedMain = editing ? (getSubCategory(editing.subSlug)?.parent ?? null) : null;
-  const [mainSlug, setMainSlug] = useState<MainCategorySlug | null>(lockedMain);
+  const lockedMain = editing ? (findSubCategory(categories, editing.subSlug)?.parent ?? null) : null;
+  const [mainSlug, setMainSlug] = useState<string | null>(lockedMain);
   const [subSlug, setSubSlug] = useState<string | null>(editing?.subSlug ?? null);
   // id của tin sinh sẵn để upload ảnh vào {user_id}/{listing_id}/ trước khi tin được ghi vào DB
   const [listingId] = useState(() => editing?.id ?? crypto.randomUUID());
@@ -60,8 +65,8 @@ export function PostListingForm({ userId, editing }: Props) {
   const [stepError, setStepError] = useState<string | undefined>();
   const [submitting, startSubmit] = useTransition();
 
-  const sub = subSlug ? getSubCategory(subSlug) : undefined;
-  const schema = useMemo(() => (subSlug ? buildZodSchema(subSlug) : undefined), [subSlug]);
+  const sub = findSubCategory(categories, subSlug);
+  const schema = useMemo(() => (sub ? buildZodSchema(sub.fields, sub.priceLabel) : undefined), [sub]);
   // Form giữ giá trị thô (chuỗi); schema chỉ dùng để kiểm tra, server tự parse lại.
   const resolver = useMemo(
     () => (schema ? (zodResolver(schema) as unknown as Resolver<ListingFormValues>) : undefined),
@@ -75,7 +80,7 @@ export function PostListingForm({ userId, editing }: Props) {
     window.scrollTo({ top: 0 });
   }
 
-  function handleMainChange(slug: MainCategorySlug) {
+  function handleMainChange(slug: string) {
     if (lockedMain && slug !== lockedMain) return;
     setMainSlug(slug);
     if (sub && sub.parent !== slug) handleSubChange(null);
@@ -85,7 +90,7 @@ export function PostListingForm({ userId, editing }: Props) {
     if (slug === subSlug) return;
     setSubSlug(slug);
     // đổi danh mục → xóa các trường riêng của danh mục cũ
-    const next = slug ? getSubCategory(slug) : undefined;
+    const next = findSubCategory(categories, slug);
     form.reset({ ...form.getValues(), attributes: next ? emptyAttributes(next) : {} });
   }
 
@@ -152,6 +157,7 @@ export function PostListingForm({ userId, editing }: Props) {
 
       {step === 0 && (
         <StepCategory
+          categories={categories}
           mainSlug={mainSlug}
           subSlug={subSlug}
           lockedMain={lockedMain}

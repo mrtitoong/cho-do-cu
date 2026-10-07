@@ -2,18 +2,19 @@
 
 import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { CategoryTree } from "@/lib/category-tree";
 import { buildSearchParams, parseSearchParams, type LatLng, type SearchFilters } from "@/lib/search-params";
 
 /** Đọc/ghi bộ lọc trên URL. Đổi bộ lọc dùng push (Back quay lại được), lần đầu đặt vị trí dùng replace. */
-export function useSearchState() {
+export function useSearchState(categories: CategoryTree) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryString = searchParams.toString();
 
   const { filters, center } = useMemo(
-    () => parseSearchParams(new URLSearchParams(queryString)),
-    [queryString],
+    () => parseSearchParams(new URLSearchParams(queryString), categories),
+    [queryString, categories],
   );
 
   const navigate = useCallback(

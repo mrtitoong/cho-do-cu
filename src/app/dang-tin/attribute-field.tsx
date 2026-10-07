@@ -3,7 +3,7 @@
 import { Controller, type Control, type FieldError } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import type { CategoryField } from "@/config/categories";
+import type { FieldDef } from "@/lib/category-tree";
 import { formatPriceShort, parseDigits } from "@/lib/format";
 import type { ListingFormValues, RangeInput } from "@/lib/listing-schema";
 import { FormField, WithUnit } from "./form-field";
@@ -23,7 +23,7 @@ export function shortMoney(text: string) {
 }
 
 type Props = {
-  field: CategoryField;
+  field: FieldDef;
   control: Control<ListingFormValues>;
   /** Ghi đè nhãn và trạng thái bắt buộc (VD ô lương thay cho ô giá) */
   label?: string;
@@ -31,7 +31,7 @@ type Props = {
   disabled?: boolean;
 };
 
-/** Một trường riêng của danh mục, tự sinh từ config theo field.type. */
+/** Một trường riêng của danh mục, tự sinh từ categories.fields theo field.type. */
 export function AttributeField({ field, control, label = field.label, required = field.required, disabled }: Props) {
   const id = `attr-${field.key}`;
 

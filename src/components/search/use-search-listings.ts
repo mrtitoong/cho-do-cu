@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CategoryTree } from "@/lib/category-tree";
 import { toSearchRpcArgs, type LatLng, type SearchFilters } from "@/lib/search-params";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,7 +38,7 @@ const INITIAL: State = { items: [], status: "loading", loadingMore: false, loadM
 export function useSearchListings(
   filters: SearchFilters,
   center: LatLng | null,
-  categoryIdBySlug: Record<string, number>,
+  categories: CategoryTree,
 ) {
   const supabase = useMemo(() => createClient(), []);
   const [state, setState] = useState<State>(INITIAL);
@@ -47,12 +48,12 @@ export function useSearchListings(
   const fetchPage = useCallback(
     async (offset: number) => {
       if (!center) return [];
-      const args = toSearchRpcArgs(filters, center, categoryIdBySlug, { limit: PAGE_SIZE, offset });
+      const args = toSearchRpcArgs(filters, center, categories, { limit: PAGE_SIZE, offset });
       const { data, error } = await supabase.rpc("search_listings", args);
       if (error) throw error;
       return (data ?? []) as SearchResultItem[];
     },
-    [supabase, filters, center, categoryIdBySlug],
+    [supabase, filters, center, categories],
   );
 
   const load = useCallback(async () => {

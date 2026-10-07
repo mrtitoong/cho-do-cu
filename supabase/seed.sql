@@ -80,6 +80,8 @@ where p.id = v.id;
 -- -----------------------------------------------------------------------------
 -- 2. Tin đăng
 -- -----------------------------------------------------------------------------
+-- Giao dịch của tin mẫu (listing_id ON DELETE SET NULL nên phải xóa trước, tránh dòng mồ côi)
+delete from public.transactions where listing_id::text like '5eed1000-%';
 delete from public.listings where id::text like '5eed1000-%';
 
 insert into public.listings (
@@ -198,6 +200,12 @@ from (
   id, seller_id, category_slug, title, description, price, attributes, status,
   lat, lng, address_text, province, district, age
 );
+
+-- Tin đã bán phải có 1 dòng transactions (giao dịch thành công, người mua ngoài nền tảng).
+insert into public.transactions (listing_id, seller_id, buyer_id, category_id, final_price, completed_at)
+select l.id, l.seller_id, null, l.category_id, l.price, l.updated_at
+from public.listings l
+where l.id::text like '5eed1000-%' and l.status = 'sold';
 
 commit;
 

@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getSubCategory } from "@/config/categories";
+import { getMyAccount } from "@/lib/auth";
+import { findSubCategory, getCategoryTree } from "@/lib/categories";
 import {
   imagesRequired,
   LISTING_IMAGE_FILE_RE,
@@ -40,15 +41,16 @@ type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
 
 /**
  * Kiểm tra dữ liệu tin (dùng chung cho đăng và sửa tin). Mọi dữ liệu được kiểm tra lại trên server,
- * không tin dữ liệu từ trình duyệt. Trả về các cột cần ghi + danh sách file đang có trong thư mục ảnh.
+ * không tin dữ liệu từ trình duyệt; danh mục và trường riêng đọc lại từ DB (bảng categories).
+ * Trả về các cột cần ghi + danh sách file đang có trong thư mục ảnh.
  */
 async function validateListing(supabase: SupabaseServer, userId: string, input: CreateListingInput) {
-  const sub = getSubCategory(input.categorySlug);
-  if (!sub) return { ok: false as const, error: "Danh mục không hợp lệ." };
+  const sub = findSubCategory(await getCategoryTree(), input.categorySlug);
+  if (!sub) return { ok: false as const, error: "Danh mục không hợp lệ hoặc đã ngừng nhận tin." };
   if (!z.uuid().safeParse(input.listingId).success) return { ok: false as const, error: "Mã tin không hợp lệ." };
 
   // 1. Thông tin chung + trường riêng
-  const parsed = buildZodSchema(sub.slug).safeParse(input.values);
+  const parsed = buildZodSchema(sub.fields, sub.priceLabel).safeParse(input.values);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
@@ -99,13 +101,6 @@ async function validateListing(supabase: SupabaseServer, userId: string, input: 
     return { ok: false as const, error: "Một số ảnh chưa tải lên xong, vui lòng thử lại.", step: "images" as const };
   }
 
-  const { data: category, error: categoryError } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("slug", sub.slug)
-    .single();
-  if (categoryError || !category) return { ok: false as const, error: "Không tìm thấy danh mục trong cơ sở dữ liệu." };
-
   const { lat, lng, addressText, province, district } = location.data;
   return {
     ok: true as const,
@@ -113,7 +108,7 @@ async function validateListing(supabase: SupabaseServer, userId: string, input: 
     paths,
     allStoredPaths: stored.map((f) => `${folder}/${f.name}`),
     row: {
-      category_id: category.id,
+      category_id: sub.id,
       ...toListingRow(sub, parsed.data),
       location: toGeographyPoint({ lat, lng }),
       address_text: addressText,
@@ -133,6 +128,7 @@ export async function createListing(input: CreateListingInput): Promise<CreateLi
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Bạn cần đăng nhập để đăng tin." };
+  if ((await getMyAccount())?.is_banned) return { ok: false, error: "Tài khoản đã bị khóa, không đăng được tin." };
 
   const checked = await validateListing(supabase, user.id, input);
   if (!checked.ok) return checked;
@@ -208,8 +204,9 @@ export async function updateListing(input: UpdateListingInput): Promise<UpdateLi
   if (!checked.ok) return checked;
   const { paths, allStoredPaths } = checked;
 
-  const oldSub = existing.category ? getSubCategory(existing.category.slug) : undefined;
-  if (oldSub && oldSub.parent !== checked.sub.parent) {
+  const oldSub = findSubCategory(await getCategoryTree(), existing.category?.slug);
+  // Danh mục cũ đã bị ẩn thì không xác định được danh mục chính → không cho đổi
+  if (!oldSub || oldSub.parent !== checked.sub.parent) {
     return { ok: false, error: "Không được đổi danh mục chính của tin." };
   }
 

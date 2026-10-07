@@ -3,19 +3,20 @@
 import { useEffect, useRef } from "react";
 import { Loader2, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { MainCategory } from "@/lib/category-tree";
 import { RADIUS_OPTIONS } from "@/lib/search-params";
 import { ListingCard, ListingCardSkeleton } from "./listing-card";
 import type { useSearchListings } from "./use-search-listings";
 
 type Props = {
   result: ReturnType<typeof useSearchListings>;
-  mainSlugById: Record<number, string>;
+  mainById: Record<number, MainCategory>;
   radiusKm: number;
   onHover: (id: string | null) => void;
   onWidenRadius: (radiusKm: number) => void;
 };
 
-export function ListingResults({ result, mainSlugById, radiusKm, onHover, onWidenRadius }: Props) {
+export function ListingResults({ result, mainById, radiusKm, onHover, onWidenRadius }: Props) {
   const sentinel = useRef<HTMLDivElement>(null);
   const { items, status, hasMore, loadingMore, loadMoreError, loadMore, retry } = result;
 
@@ -71,7 +72,7 @@ export function ListingResults({ result, mainSlugById, radiusKm, onHover, onWide
       <ul className="space-y-1">
         {items.map((item) => (
           <li key={item.id}>
-            <ListingCard item={item} mainSlug={mainSlugById[item.parent_category_id]} onHover={onHover} />
+            <ListingCard item={item} main={mainById[item.parent_category_id]} onHover={onHover} />
           </li>
         ))}
       </ul>

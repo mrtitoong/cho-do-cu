@@ -1,23 +1,19 @@
-import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
-import { SearchPage } from "@/components/search/search-page";
-import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+import { Map as MapIcon } from "lucide-react";
+import { PageTitle } from "@/components/layout/page-title";
+import { Button } from "@/components/ui/button";
 
-// Trang chủ: tìm tin theo bản đồ. Toàn bộ bộ lọc nằm trên URL, dữ liệu tải phía trình duyệt qua RPC search_listings.
-export default async function HomePage() {
-  const supabase = await createClient();
-  const { data: categories, error } = await supabase.from("categories").select("id, slug, parent_id");
-  if (error) throw new Error(`Không tải được danh mục: ${error.message}`);
-
+// Trang chủ tạm thời để trống; nội dung (thống kê, tin tức, tin mới) làm ở giai đoạn 8.
+// Tìm kiếm theo bản đồ đã chuyển sang /tim-kiem.
+export default function HomePage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          <Loader2 className="mr-2 size-4 animate-spin" /> Đang tải...
-        </div>
-      }
-    >
-      <SearchPage categories={categories} />
-    </Suspense>
+    <div className="mx-auto w-full max-w-3xl px-4 py-6">
+      <PageTitle title="Trang chủ" />
+      <Button asChild className="h-11">
+        <Link href="/tim-kiem">
+          <MapIcon /> Tìm tin trên bản đồ
+        </Link>
+      </Button>
+    </div>
   );
 }

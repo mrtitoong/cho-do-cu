@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { Clock, MapPin } from "lucide-react";
 import { ListingCard } from "@/components/search/listing-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getMainCategory } from "@/config/categories";
 import { formatTimeAgo } from "@/lib/format";
 import { listingImageUrl } from "@/lib/listing-images";
 import { describeAttributes } from "@/lib/listing-schema";
@@ -75,8 +74,7 @@ export default async function ListingPage({ params }: Props) {
   const viewerId = auth?.claims?.sub ?? null;
   const isOwner = viewerId === listing.seller_id;
 
-  const { sub } = listing;
-  const main = sub ? getMainCategory(sub.parent) : undefined;
+  const { sub, main } = listing;
   const rows = sub ? describeAttributes(sub, listing.attributes).filter((r) => r.key !== sub.priceFromField) : [];
   const priceLabel = sub?.priceFromField ? "Mức lương" : null;
   const sold = listing.status === "sold";
@@ -182,7 +180,7 @@ export default async function ListingPage({ params }: Props) {
           <h2 className="mb-3 font-semibold">Tin tương tự</h2>
           <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
             {similar.map((item) => (
-              <ListingCard key={item.id} item={item} mainSlug={sub?.parent} />
+              <ListingCard key={item.id} item={item} main={main} />
             ))}
           </div>
         </section>

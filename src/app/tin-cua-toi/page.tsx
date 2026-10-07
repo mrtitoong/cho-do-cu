@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageTitle } from "@/components/layout/page-title";
-import { getSubCategory } from "@/config/categories";
+import { findSubCategory, getCategoryTree } from "@/lib/categories";
 import { requireUser } from "@/lib/auth";
 import { listingPriceText } from "@/lib/listing-schema";
 import { createClient } from "@/lib/supabase/server";
@@ -12,19 +12,22 @@ export default async function MyListingsPage() {
   const user = await requireUser("/tin-cua-toi");
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("listings")
-    .select(
-      `id, title, price, price_unit, attributes, status, province, district, created_at,
-       category:categories(slug),
-       images:listing_images(path, sort_order)`,
-    )
-    .eq("seller_id", user.id)
-    .order("created_at", { ascending: false });
+  const [{ data, error }, categories] = await Promise.all([
+    supabase
+      .from("listings")
+      .select(
+        `id, title, price, price_unit, attributes, status, province, district, created_at,
+         category:categories(slug),
+         images:listing_images(path, sort_order)`,
+      )
+      .eq("seller_id", user.id)
+      .order("created_at", { ascending: false }),
+    getCategoryTree(),
+  ]);
   if (error) console.error("MyListingsPage:", error);
 
   const listings: MyListing[] = (data ?? []).map((row) => {
-    const sub = row.category ? getSubCategory(row.category.slug) : undefined;
+    const sub = findSubCategory(categories, row.category?.slug);
     const attributes = (row.attributes ?? {}) as Record<string, unknown>;
     const cover = [...row.images].sort((a, b) => a.sort_order - b.sort_order)[0];
     return {

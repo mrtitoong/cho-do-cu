@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PostListingForm, type EditingListing } from "@/app/dang-tin/post-listing-form";
 import { PageTitle } from "@/components/layout/page-title";
-import { getSubCategory } from "@/config/categories";
+import { findSubCategory, getCategoryTree } from "@/lib/categories";
 import { requireUser } from "@/lib/auth";
 import { toFormValues } from "@/lib/listing-schema";
 import { createClient } from "@/lib/supabase/server";
@@ -17,7 +17,7 @@ export default async function EditListingPage({ params }: PageProps<"/tin/[id]/s
   if (!UUID_RE.test(id)) notFound();
 
   const supabase = await createClient();
-  const [{ data: listing, error }, { data: point }] = await Promise.all([
+  const [{ data: listing, error }, { data: point }, categories] = await Promise.all([
     supabase
       .from("listings")
       .select(
@@ -30,11 +30,12 @@ export default async function EditListingPage({ params }: PageProps<"/tin/[id]/s
       .maybeSingle(),
     // Cột location bị ẩn với mọi người; chủ tin đọc vị trí thật qua hàm riêng
     supabase.rpc("get_my_listing_location", { p_listing_id: id }).maybeSingle(),
+    getCategoryTree(),
   ]);
   if (error) console.error("EditListingPage:", error);
 
   // Tin không tồn tại hoặc không phải của mình → 404 (không tiết lộ tin có tồn tại hay không)
-  const sub = listing?.category ? getSubCategory(listing.category.slug) : undefined;
+  const sub = findSubCategory(categories, listing?.category?.slug);
   if (!listing || !sub) notFound();
 
   const editing: EditingListing = {
@@ -56,7 +57,7 @@ export default async function EditListingPage({ params }: PageProps<"/tin/[id]/s
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
       <PageTitle title="Sửa tin" description="Cập nhật thông tin, ảnh hoặc vị trí của tin." />
-      <PostListingForm userId={user.id} editing={editing} />
+      <PostListingForm userId={user.id} categories={categories} editing={editing} />
     </div>
   );
 }

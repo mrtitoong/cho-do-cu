@@ -1,12 +1,12 @@
-import type { SubCategory } from "@/config/categories";
+import type { SubCategory } from "@/lib/category-tree";
 
 /** Bucket Storage chứa ảnh tin đăng (công khai để đọc). */
 export const LISTING_IMAGES_BUCKET = "listing-images";
 export const MAX_LISTING_IMAGES = 10;
 
-/** Danh mục Việc làm không bắt buộc ảnh; các danh mục khác cần ít nhất 1 ảnh. */
+/** Danh mục có bắt buộc ít nhất 1 ảnh không (cột categories.requires_images, VD Việc làm không bắt buộc). */
 export function imagesRequired(sub: SubCategory) {
-  return sub.parent !== "viec-lam";
+  return sub.requiresImages;
 }
 
 /** Thư mục chứa ảnh của một tin: {user_id}/{listing_id} */

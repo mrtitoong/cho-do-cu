@@ -9,6 +9,7 @@ import { Circle, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } 
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { MainCategory } from "@/lib/category-tree";
 import type { LatLng } from "@/lib/search-params";
 import { clusterIcon, getPinIcon } from "./pin-icons";
 import { ListingPopupCard } from "./listing-card";
@@ -18,7 +19,7 @@ type Props = {
   center: LatLng;
   radiusKm: number;
   items: SearchResultItem[];
-  mainSlugById: Record<number, string>;
+  mainById: Record<number, MainCategory>;
   hoveredId: string | null;
   onSearchArea: (center: LatLng) => void;
 };
@@ -63,7 +64,7 @@ function MovedWatcher({ center, radiusKm, onMoved }: { center: LatLng; radiusKm:
   return null;
 }
 
-export default function SearchMap({ center, radiusKm, items, mainSlugById, hoveredId, onSearchArea }: Props) {
+export default function SearchMap({ center, radiusKm, items, mainById, hoveredId, onSearchArea }: Props) {
   const [map, setMap] = useState<L.Map | null>(null);
   const [moved, setMoved] = useState(false);
   const skipFitRef = useRef(false);
@@ -104,12 +105,12 @@ export default function SearchMap({ center, radiusKm, items, mainSlugById, hover
               <Marker
                 key={item.id}
                 position={[item.lat, item.lng]}
-                icon={getPinIcon(mainSlugById[item.parent_category_id], highlighted)}
+                icon={getPinIcon(mainById[item.parent_category_id], highlighted)}
                 zIndexOffset={highlighted ? 1000 : 0}
                 title={item.title}
               >
                 <Popup minWidth={220} maxWidth={240} closeButton={false} className="listing-popup">
-                  <ListingPopupCard item={item} mainSlug={mainSlugById[item.parent_category_id]} />
+                  <ListingPopupCard item={item} main={mainById[item.parent_category_id]} />
                 </Popup>
               </Marker>
             );

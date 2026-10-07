@@ -1,15 +1,16 @@
 import { z } from "zod";
 import {
-  getSubCategory,
   resolvePricing,
-  type CategoryField,
+  priceUnitOf,
+  type FieldDef,
+  type PriceLabel,
   type PriceUnit,
   type SubCategory,
-} from "@/config/categories";
+} from "@/lib/category-tree";
 import { formatNumber, formatPrice, formatPriceShort, parseDigits } from "@/lib/format";
 
 /*
- * Schema kiểm tra tin đăng, sinh tự động từ src/config/categories.ts.
+ * Schema kiểm tra tin đăng, sinh tự động từ danh sách trường riêng của danh mục (bảng categories).
  * Dùng chung cho form (trình duyệt) và Server Action createListing (server).
  */
 
@@ -39,7 +40,7 @@ export function emptyAttributes(sub: SubCategory): ListingFormValues["attributes
 
 const lower = (label: string) => label.charAt(0).toLowerCase() + label.slice(1);
 
-function toNumber(field: CategoryField) {
+function toNumber(field: FieldDef) {
   return (v: unknown) => {
     if (typeof v !== "string") return v;
     const text = v.trim();
@@ -49,7 +50,7 @@ function toNumber(field: CategoryField) {
   };
 }
 
-function numberSchema(field: CategoryField) {
+function numberSchema(field: FieldDef) {
   const label = field.label;
   let n = z.number({
     error: (iss) => (iss.input === undefined ? `Vui lòng nhập ${lower(label)}` : `${label} phải là số`),
@@ -64,7 +65,7 @@ function numberSchema(field: CategoryField) {
   return n;
 }
 
-function fieldSchema(field: CategoryField) {
+function fieldSchema(field: FieldDef) {
   const optional = <T extends z.ZodType>(s: T) => (field.required ? s : s.optional());
   const blankToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 
@@ -107,12 +108,20 @@ function fieldSchema(field: CategoryField) {
   }
 }
 
-/** Sinh schema zod cho toàn bộ form đăng tin của một danh mục con. */
-export function buildZodSchema(categorySlug: string) {
-  const sub = getSubCategory(categorySlug);
-  if (!sub) throw new Error(`Danh mục không tồn tại: ${categorySlug}`);
+/**
+ * Sinh schema zod cho toàn bộ form đăng tin từ danh sách trường của danh mục con
+ * (getFieldsForCategory / sub.fields). priceLabel chỉ dùng cho câu báo lỗi ô giá.
+ */
+export function buildZodSchema(fields: FieldDef[], priceLabel: PriceLabel = "Giá bán") {
+  const rent = fields.find((f) => f.type === "select" && f.rentValue);
+  const pricing = {
+    priceLabel,
+    priceUnit: priceUnitOf(priceLabel),
+    rentWhen: rent ? { key: rent.key, value: rent.rentValue! } : undefined,
+  };
+  const priceFromField = fields.find((f) => f.type === "range" && f.asPrice)?.key;
 
-  const attributes = z.object(Object.fromEntries(sub.fields.map((f) => [f.key, fieldSchema(f)])));
+  const attributes = z.object(Object.fromEntries(fields.map((f) => [f.key, fieldSchema(f)])));
 
   return z
     .object({
@@ -138,17 +147,17 @@ export function buildZodSchema(categorySlug: string) {
       (v, ctx) => {
         if (v.negotiable) return;
         const attrs = (v.attributes ?? {}) as Record<string, unknown>;
-        if (sub.priceFromField) {
-          const range = attrs[sub.priceFromField] as RangeValue | undefined;
+        if (priceFromField) {
+          const range = attrs[priceFromField] as RangeValue | undefined;
           if (range?.min === undefined) {
             ctx.addIssue({
               code: "custom",
-              path: ["attributes", sub.priceFromField],
+              path: ["attributes", priceFromField],
               message: "Nhập mức lương tối thiểu hoặc chọn \"Lương thỏa thuận\"",
             });
           }
         } else if (v.price === undefined) {
-          const { label } = resolvePricing(sub, attrs);
+          const { label } = resolvePricing(pricing, attrs);
           ctx.addIssue({
             code: "custom",
             path: ["price"],
@@ -191,7 +200,7 @@ export function toFormValues(
   sub: SubCategory,
   listing: { title: string; description: string; price: number | null; attributes: Record<string, unknown> },
 ): ListingFormValues {
-  const numberText = (field: CategoryField, v: unknown) => {
+  const numberText = (field: FieldDef, v: unknown) => {
     if (typeof v !== "number") return "";
     if (field.type === "year") return String(v);
     return field.decimal ? String(v).replace(".", ",") : formatNumber(v);
@@ -245,7 +254,7 @@ export function listingPriceText(
 }
 
 /** Giá trị một trường riêng để hiển thị; null nếu trống. */
-export function formatAttributeValue(field: CategoryField, value: unknown): string | null {
+export function formatAttributeValue(field: FieldDef, value: unknown): string | null {
   if (value === undefined || value === null || value === "") return null;
   const withUnit = (text: string) => (field.unit ? `${text} ${field.unit}` : text);
 
@@ -268,7 +277,7 @@ export function formatAttributeValue(field: CategoryField, value: unknown): stri
   }
 }
 
-/** Danh sách { label, value } của các trường riêng đã điền, theo thứ tự trong config. */
+/** Danh sách { label, value } của các trường riêng đã điền, theo thứ tự trường của danh mục. */
 export function describeAttributes(sub: SubCategory, attributes: Record<string, unknown>) {
   return sub.fields.flatMap((field) => {
     const value = formatAttributeValue(field, attributes[field.key]);

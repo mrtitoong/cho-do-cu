@@ -31,6 +31,18 @@ export async function setListingStatus(listingId: string, status: ListingStatus)
   const { supabase, user } = await currentUser();
   if (!user) return { ok: false, error: "Bạn cần đăng nhập." };
 
+  // Đã bán: đổi trạng thái và tạo giao dịch trong cùng hàm SQL (DB chặn đổi thẳng sang 'sold').
+  // Tạm thời người mua = ngoài nền tảng, giá chốt = giá đăng; hộp thoại chọn người mua làm sau.
+  if (status === "sold") {
+    const { error } = await supabase.rpc("mark_listing_sold", { p_listing_id: listingId });
+    if (error) {
+      console.error("setListingStatus mark_listing_sold:", error);
+      return { ok: false, error: "Không đánh dấu đã bán được, vui lòng thử lại." };
+    }
+    revalidateListing(listingId);
+    return { ok: true };
+  }
+
   const { data, error } = await supabase
     .from("listings")
     .update({ status })

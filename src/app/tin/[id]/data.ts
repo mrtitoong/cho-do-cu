@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { getSubCategory } from "@/config/categories";
+import { findSubCategory, getCategoryTree } from "@/lib/categories";
 import type { SearchResultItem } from "@/components/search/use-search-listings";
 import { parseGeographyPoint } from "@/lib/listing-location";
 import { listingPriceText } from "@/lib/listing-schema";
@@ -16,27 +16,32 @@ const SIMILAR_RADIUS_KM = 100;
 export const getListing = cache(async (id: string) => {
   if (!UUID_RE.test(id)) return null;
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("listings")
-    .select(
-      `id, seller_id, category_id, title, description, price, price_unit, attributes, status,
-       public_location, province, district, created_at,
-       category:categories(slug),
-       images:listing_images(path, sort_order),
-       seller:profiles(id, full_name, avatar_url, created_at)`,
-    )
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data, error }, categories] = await Promise.all([
+    supabase
+      .from("listings")
+      .select(
+        `id, seller_id, category_id, title, description, price, price_unit, attributes, status,
+         public_location, province, district, created_at,
+         category:categories(slug),
+         images:listing_images(path, sort_order),
+         seller:profiles(id, full_name, avatar_url, created_at)`,
+      )
+      .eq("id", id)
+      .maybeSingle(),
+    getCategoryTree(),
+  ]);
   if (error) console.error("getListing:", error);
   if (!data) return null;
 
-  const sub = data.category ? getSubCategory(data.category.slug) : undefined;
+  const sub = findSubCategory(categories, data.category?.slug);
+  const main = sub ? categories.find((m) => m.id === sub.parentId) : undefined;
   const attributes = (data.attributes ?? {}) as Record<string, unknown>;
   const priceText = listingPriceText(sub, { ...data, attributes });
 
   return {
     ...data,
     sub,
+    main,
     attributes,
     priceText,
     images: [...data.images].sort((a, b) => a.sort_order - b.sort_order),

@@ -7,13 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import {
-  getFilterFields,
-  getMainCategory,
-  MAIN_CATEGORIES,
-  type CategoryField,
-  type MainCategorySlug,
-} from "@/config/categories";
+import { findMainCategory, getFilterFields, type CategoryTree, type FieldDef } from "@/lib/category-tree";
 import { formatNumber, parseDigits } from "@/lib/format";
 import {
   clearFilters,
@@ -26,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type Props = {
+  categories: CategoryTree;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   filters: SearchFilters;
@@ -47,7 +42,7 @@ function useIsDesktop() {
 }
 
 /** Bộ lọc: panel bên trái trên máy tính, bảng trượt từ dưới lên trên điện thoại. */
-export function FilterPanel({ open, onOpenChange, filters, onApply }: Props) {
+export function FilterPanel({ categories, open, onOpenChange, filters, onApply }: Props) {
   const isDesktop = useIsDesktop();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -61,6 +56,7 @@ export function FilterPanel({ open, onOpenChange, filters, onApply }: Props) {
         </SheetHeader>
         {/* Form mount lại mỗi lần mở → bản nháp luôn bắt đầu từ bộ lọc hiện tại */}
         <FilterForm
+          categories={categories}
           initial={filters}
           onApply={(next) => {
             onApply(next);
@@ -72,11 +68,19 @@ export function FilterPanel({ open, onOpenChange, filters, onApply }: Props) {
   );
 }
 
-function FilterForm({ initial, onApply }: { initial: SearchFilters; onApply: (filters: SearchFilters) => void }) {
+function FilterForm({
+  categories,
+  initial,
+  onApply,
+}: {
+  categories: CategoryTree;
+  initial: SearchFilters;
+  onApply: (filters: SearchFilters) => void;
+}) {
   const [draft, setDraft] = useState(initial);
-  const main = draft.main ? getMainCategory(draft.main) : undefined;
-  const attrFields = getFilterFields(draft.main, draft.sub);
-  const priceLabel = draft.main === "viec-lam" ? "Mức lương (đ/tháng)" : "Khoảng giá (đ)";
+  const main = findMainCategory(categories, draft.main);
+  const attrFields = getFilterFields(categories, draft.main, draft.sub);
+  const priceLabel = main?.priceLabel === "Mức lương" ? "Mức lương (đ/tháng)" : "Khoảng giá (đ)";
 
   const update = (patch: Partial<SearchFilters>) => setDraft((d) => ({ ...d, ...patch }));
   const setAttr = (key: string, value: AttrFilter | undefined) =>
@@ -122,10 +126,10 @@ function FilterForm({ initial, onApply }: { initial: SearchFilters; onApply: (fi
               id="filter-main"
               className="w-full [&_select]:h-11"
               value={draft.main ?? ""}
-              onChange={(e) => setDraft((d) => withCategory(d, (e.target.value || undefined) as MainCategorySlug | undefined))}
+              onChange={(e) => setDraft((d) => withCategory(categories, d, e.target.value || undefined))}
             >
               <NativeSelectOption value="">Tất cả</NativeSelectOption>
-              {MAIN_CATEGORIES.map((m) => (
+              {categories.map((m) => (
                 <NativeSelectOption key={m.slug} value={m.slug}>
                   {m.name}
                 </NativeSelectOption>
@@ -139,7 +143,7 @@ function FilterForm({ initial, onApply }: { initial: SearchFilters; onApply: (fi
               className="w-full [&_select]:h-11"
               value={draft.sub ?? ""}
               disabled={!main}
-              onChange={(e) => setDraft((d) => withCategory(d, d.main, e.target.value || undefined))}
+              onChange={(e) => setDraft((d) => withCategory(categories, d, d.main, e.target.value || undefined))}
             >
               <NativeSelectOption value="">Tất cả</NativeSelectOption>
               {main?.subcategories.map((s) => (
@@ -284,13 +288,13 @@ function MinMax({
   );
 }
 
-/** Bộ lọc riêng tự sinh từ config: select → chọn nhiều, số / năm → khoảng từ – đến. */
+/** Bộ lọc riêng tự sinh từ trường filterable của danh mục: select → chọn nhiều, số / năm → khoảng từ – đến. */
 function AttrFilterInput({
   field,
   value,
   onChange,
 }: {
-  field: CategoryField;
+  field: FieldDef;
   value: AttrFilter | undefined;
   onChange: (value: AttrFilter | undefined) => void;
 }) {

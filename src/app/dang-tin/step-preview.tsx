@@ -1,5 +1,5 @@
 import { ImageIcon, MapPin } from "lucide-react";
-import { getMainCategory, resolvePricing, type SubCategory } from "@/config/categories";
+import { resolvePricing, type SubCategory } from "@/lib/category-tree";
 import {
   describeAttributes,
   formatAttributeValue,
@@ -52,7 +52,7 @@ export function StepPreview({ sub, data, coverUrl, imageCount, location }: Props
         <div className="space-y-4 p-4">
           <div>
             <p className="text-xs text-muted-foreground">
-              {getMainCategory(sub.parent)?.name} › {sub.name}
+              {sub.parentName} › {sub.name}
             </p>
             <h2 className="mt-1 text-xl font-semibold break-words">{data.title}</h2>
             <p className="mt-2 text-lg font-bold text-red-600">

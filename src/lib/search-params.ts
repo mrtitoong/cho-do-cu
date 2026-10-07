@@ -1,13 +1,13 @@
 import {
+  findMainCategory,
+  findSubCategory,
   getFilterFields,
-  getMainCategory,
-  getSubCategory,
-  type CategoryField,
-  type MainCategorySlug,
-} from "@/config/categories";
+  type CategoryTree,
+  type FieldDef,
+} from "@/lib/category-tree";
 
 /*
- * Trạng thái tìm kiếm của trang chủ, lưu toàn bộ trên URL để chia sẻ link và bấm Back vẫn đúng.
+ * Trạng thái tìm kiếm của trang /tim-kiem, lưu toàn bộ trên URL để chia sẻ link và bấm Back vẫn đúng.
  *   q        từ khóa                     dm / dmc   danh mục chính / con (slug)
  *   gia_tu   giá tối thiểu (đ)            gia_den    giá tối đa (đ)
  *   bk       bán kính (km, mặc định 5)    sx         sắp xếp (mặc định gần nhất)
@@ -31,7 +31,7 @@ export type AttrFilter = { values: string[] } | { min?: number; max?: number };
 
 export type SearchFilters = {
   q: string;
-  main?: MainCategorySlug;
+  main?: string;
   sub?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -52,7 +52,7 @@ function parseNumber(text: string | null | undefined) {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-function parseAttr(field: CategoryField, raw: string): AttrFilter | undefined {
+function parseAttr(field: FieldDef, raw: string): AttrFilter | undefined {
   if (field.type === "select") {
     const allowed = new Set(field.options?.map((o) => o.value));
     const values = raw.split(",").filter((v) => allowed.has(v));
@@ -79,15 +79,18 @@ export function isAttrFilterEmpty(filter: AttrFilter | undefined) {
 }
 
 /** URL → bộ lọc. Giá trị sai (danh mục không tồn tại, bán kính lạ...) bị bỏ qua. */
-export function parseSearchParams(params: URLSearchParams): { filters: SearchFilters; center: LatLng | null } {
-  const sub = getSubCategory(params.get("dmc") ?? "");
-  const main = sub ? getMainCategory(sub.parent) : getMainCategory(params.get("dm") ?? "");
+export function parseSearchParams(
+  params: URLSearchParams,
+  categories: CategoryTree,
+): { filters: SearchFilters; center: LatLng | null } {
+  const sub = findSubCategory(categories, params.get("dmc"));
+  const main = findMainCategory(categories, sub ? sub.parent : params.get("dm"));
 
   const radius = Number(params.get("bk"));
   const sort = params.get("sx");
 
   const attrs: Record<string, AttrFilter> = {};
-  for (const field of getFilterFields(main?.slug, sub?.slug)) {
+  for (const field of getFilterFields(categories, main?.slug, sub?.slug)) {
     const raw = params.get(ATTR_PREFIX + field.key);
     const parsed = raw ? parseAttr(field, raw) : undefined;
     if (parsed) attrs[field.key] = parsed;
@@ -152,8 +155,13 @@ export function clearFilters(filters: SearchFilters): SearchFilters {
 }
 
 /** Đổi danh mục thì bỏ các bộ lọc riêng không còn áp dụng. */
-export function withCategory(filters: SearchFilters, main?: MainCategorySlug, sub?: string): SearchFilters {
-  const keys = new Set(getFilterFields(main, sub).map((f) => f.key));
+export function withCategory(
+  categories: CategoryTree,
+  filters: SearchFilters,
+  main?: string,
+  sub?: string,
+): SearchFilters {
+  const keys = new Set(getFilterFields(categories, main, sub).map((f) => f.key));
   const attrs = Object.fromEntries(Object.entries(filters.attrs).filter(([key]) => keys.has(key)));
   return { ...filters, main, sub, attrs };
 }
@@ -162,11 +170,12 @@ export function withCategory(filters: SearchFilters, main?: MainCategorySlug, su
 export function toSearchRpcArgs(
   filters: SearchFilters,
   center: LatLng,
-  categoryIdBySlug: Record<string, number>,
+  categories: CategoryTree,
   page: { limit: number; offset: number },
 ) {
-  const categorySlug = filters.sub ?? filters.main;
-  const categoryId = categorySlug ? categoryIdBySlug[categorySlug] : undefined;
+  const categoryId = filters.sub
+    ? findSubCategory(categories, filters.sub)?.id
+    : findMainCategory(categories, filters.main)?.id;
 
   const attrFilters: Record<string, unknown> = {};
   for (const [key, filter] of Object.entries(filters.attrs)) {

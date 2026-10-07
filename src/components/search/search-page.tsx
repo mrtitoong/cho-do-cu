@@ -6,6 +6,7 @@ import { List, Loader2, Map as MapIcon, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_CITY_NAME, DEFAULT_MAP_CENTER } from "@/config/map";
+import { mainCategoryById, type CategoryTree } from "@/lib/category-tree";
 import { clearFilters, countActiveFilters, withCategory } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
 import { CategoryChips } from "./category-chips";
@@ -23,19 +24,13 @@ const SearchMap = dynamic(() => import("./search-map"), {
   ),
 });
 
-type Props = { categories: { id: number; slug: string; parent_id: number | null }[] };
+type Props = { categories: CategoryTree };
 
 export function SearchPage({ categories }: Props) {
-  const { categoryIdBySlug, mainSlugById } = useMemo(
-    () => ({
-      categoryIdBySlug: Object.fromEntries(categories.map((c) => [c.slug, c.id])),
-      mainSlugById: Object.fromEntries(categories.filter((c) => c.parent_id === null).map((c) => [c.id, c.slug])),
-    }),
-    [categories],
-  );
+  const mainById = useMemo(() => mainCategoryById(categories), [categories]);
 
-  const { filters, center, setFilters, setCenter } = useSearchState();
-  const result = useSearchListings(filters, center, categoryIdBySlug);
+  const { filters, center, setFilters, setCenter } = useSearchState(categories);
+  const result = useSearchListings(filters, center, categories);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false); // chỉ dùng trên điện thoại
@@ -97,7 +92,11 @@ export function SearchPage({ categories }: Props) {
     <div className="flex h-[calc(100dvh-8rem-1px-env(safe-area-inset-bottom))] flex-col md:h-[calc(100dvh-4rem-1px)]">
       <div className="flex items-center gap-2 border-b px-4 py-2">
         <div className="min-w-0 flex-1">
-          <CategoryChips value={filters.main} onChange={(main) => setFilters(withCategory(filters, main))} />
+          <CategoryChips
+            categories={categories}
+            value={filters.main}
+            onChange={(main) => setFilters(withCategory(categories, filters, main))}
+          />
         </div>
         <Button variant="outline" className="relative h-11 shrink-0 rounded-full px-3" onClick={() => setFilterOpen(true)}>
           <SlidersHorizontal />
@@ -143,7 +142,7 @@ export function SearchPage({ categories }: Props) {
           <div className={cn("min-h-0 flex-1 overflow-y-auto px-2 pb-20 md:pb-2", !listOpen && "max-md:invisible")}>
             <ListingResults
               result={result}
-              mainSlugById={mainSlugById}
+              mainById={mainById}
               radiusKm={filters.radius}
               onHover={setHoveredId}
               onWidenRadius={(radius) => setFilters({ ...filters, radius })}
@@ -156,7 +155,7 @@ export function SearchPage({ categories }: Props) {
             center={center ?? DEFAULT_MAP_CENTER}
             radiusKm={filters.radius}
             items={result.items}
-            mainSlugById={mainSlugById}
+            mainById={mainById}
             hoveredId={hoveredId}
             onSearchArea={(c) => setCenter(c)}
           />
@@ -181,7 +180,13 @@ export function SearchPage({ categories }: Props) {
         </Button>
       </div>
 
-      <FilterPanel open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <FilterPanel
+        categories={categories}
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        filters={filters}
+        onApply={setFilters}
+      />
     </div>
   );
 }

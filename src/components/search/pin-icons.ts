@@ -2,15 +2,16 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import L from "leaflet";
-import { MAIN_CATEGORIES, type MainCategory } from "@/config/categories";
+import { getCategoryIcon } from "@/components/category-icon";
+import type { MainCategory } from "@/lib/category-tree";
 
 const cache = new Map<string, L.DivIcon>();
 
-function pinHtml(main: MainCategory | undefined, highlighted: boolean) {
+function pinHtml(main: Pick<MainCategory, "color" | "icon"> | undefined, highlighted: boolean) {
   const color = main?.color ?? "#64748b";
   const scale = highlighted ? 1.3 : 1;
   const icon = main
-    ? renderToStaticMarkup(createElement(main.icon, { size: 15, color, strokeWidth: 2.5 }))
+    ? renderToStaticMarkup(createElement(getCategoryIcon(main.icon), { size: 15, color, strokeWidth: 2.5 }))
     : "";
   return `<div style="transform:scale(${scale});transform-origin:50% 100%;transition:transform .15s;width:32px;height:42px;position:relative;filter:drop-shadow(0 2px 2px rgb(0 0 0 / .35))">
     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
@@ -21,12 +22,11 @@ function pinHtml(main: MainCategory | undefined, highlighted: boolean) {
   </div>`;
 }
 
-/** Ghim theo danh mục chính (id), có bản nổi bật khi rê chuột trên thẻ tin. */
-export function getPinIcon(mainSlug: string | undefined, highlighted = false) {
-  const key = `${mainSlug}:${highlighted}`;
+/** Ghim theo danh mục chính (màu + icon), có bản nổi bật khi rê chuột trên thẻ tin. */
+export function getPinIcon(main: Pick<MainCategory, "color" | "icon"> | undefined, highlighted = false) {
+  const key = `${main?.color}:${main?.icon}:${highlighted}`;
   let icon = cache.get(key);
   if (!icon) {
-    const main = MAIN_CATEGORIES.find((m) => m.slug === mainSlug);
     icon = L.divIcon({
       className: "",
       html: pinHtml(main, highlighted),

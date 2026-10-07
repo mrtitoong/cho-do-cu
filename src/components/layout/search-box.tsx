@@ -14,13 +14,15 @@ const inputProps = {
   className: "h-10 rounded-full pl-9",
 } as const;
 
-/** Ô tìm kiếm trên thanh đầu trang: đặt từ khóa (?q=) cho trang chủ, giữ các bộ lọc khác. */
+const SEARCH_PATH = "/tim-kiem";
+
+/** Ô tìm kiếm trên thanh đầu trang: đặt từ khóa (?q=) cho trang tìm kiếm /tim-kiem, giữ các bộ lọc khác. */
 function SearchForm() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const onHome = pathname === "/";
-  const current = onHome ? (searchParams.get("q") ?? "") : "";
+  const onSearch = pathname === SEARCH_PATH;
+  const current = onSearch ? (searchParams.get("q") ?? "") : "";
 
   return (
     <form
@@ -29,11 +31,11 @@ function SearchForm() {
       onSubmit={(e) => {
         e.preventDefault();
         const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
-        const params = new URLSearchParams(onHome ? searchParams.toString() : "");
+        const params = new URLSearchParams(onSearch ? searchParams.toString() : "");
         if (q) params.set("q", q);
         else params.delete("q");
         const qs = params.toString();
-        router.push(qs ? `/?${qs}` : "/");
+        router.push(qs ? `${SEARCH_PATH}?${qs}` : SEARCH_PATH);
         (document.activeElement as HTMLElement | null)?.blur(); // ẩn bàn phím trên điện thoại
       }}
     >

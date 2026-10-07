@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { resolvePricing, type SubCategory } from "@/config/categories";
+import { resolvePricing, type SubCategory } from "@/lib/category-tree";
 import {
   DESCRIPTION_MAX,
   DESCRIPTION_MIN,

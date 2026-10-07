@@ -145,7 +145,7 @@ function EmptyInbox({ hasAny }: { hasAny: boolean }) {
       <MessageCircle className="size-10" />
       <p>Chưa có cuộc trò chuyện nào. Bấm &quot;Chat với người bán&quot; ở một tin đăng để bắt đầu.</p>
       <Button asChild variant="outline" className="h-11">
-        <Link href="/">Xem tin đăng</Link>
+        <Link href="/tim-kiem">Xem tin đăng</Link>
       </Button>
     </div>
   );
