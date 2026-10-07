@@ -7,7 +7,7 @@ import { Logo } from "./logo";
 import { SearchBox } from "./search-box";
 import { UserMenu } from "./user-menu";
 
-export function SiteHeader({ user }: { user: SessionUser | null }) {
+export function SiteHeader({ user, isAdmin }: { user: SessionUser | null; isAdmin: boolean }) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
@@ -31,7 +31,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
             </Link>
           </Button>
         </nav>
-        <UserMenu user={user} />
+        <UserMenu user={user} isAdmin={isAdmin} />
       </div>
     </header>
   );

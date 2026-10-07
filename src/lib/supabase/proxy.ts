@@ -31,13 +31,36 @@ export async function updateSession(request: NextRequest) {
   const isLoggedIn = Boolean(data?.claims);
 
   const { pathname, search } = request.nextUrl;
-  if (!isLoggedIn && isProtectedPath(pathname)) {
-    const url = new URL(loginUrl(pathname + search), request.url);
-    const redirectResponse = NextResponse.redirect(url);
+  const redirectTo = (target: string) => {
+    const redirectResponse = NextResponse.redirect(new URL(target, request.url));
     // Giữ lại cookie vừa làm mới (nếu có).
     response.cookies.getAll().forEach((c) => redirectResponse.cookies.set(c));
     return redirectResponse;
+  };
+
+  if (!isLoggedIn && (isProtectedPath(pathname) || isAdminPath(pathname))) {
+    return redirectTo(loginUrl(pathname + search));
+  }
+
+  // Lớp 1/3 bảo vệ khu vực Admin (layout và Server Action kiểm tra lại trên server).
+  if (isAdminPath(pathname)) {
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+    if (isAdmin !== true) return redirectTo("/");
+  }
+
+  // "Lần hoạt động cuối": tối đa 1 lần / 5 phút, đánh dấu bằng cookie để không gọi DB mỗi request.
+  if (isLoggedIn && !request.cookies.has(LAST_SEEN_COOKIE)) {
+    const { error } = await supabase.rpc("touch_last_seen");
+    if (!error) {
+      response.cookies.set(LAST_SEEN_COOKIE, "1", { maxAge: 5 * 60, httpOnly: true, sameSite: "lax", path: "/" });
+    }
   }
 
   return response;
+}
+
+const LAST_SEEN_COOKIE = "cdc_seen";
+
+function isAdminPath(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
 }

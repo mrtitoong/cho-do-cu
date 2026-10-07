@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ListChecks, LogOut, User } from "lucide-react";
+import { ListChecks, LogOut, ShieldCheck, User } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 import type { SessionUser } from "@/lib/session";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,7 +20,7 @@ function initials(user: SessionUser) {
   return source.trim().charAt(0).toUpperCase();
 }
 
-export function UserMenu({ user }: { user: SessionUser | null }) {
+export function UserMenu({ user, isAdmin }: { user: SessionUser | null; isAdmin: boolean }) {
   if (!user) {
     return (
       <Button asChild variant="outline" className="h-11 px-4">
@@ -59,6 +59,13 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
             <User /> Hồ sơ
           </Link>
         </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link href="/admin">
+              <ShieldCheck /> Quản trị
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => void signOut()}>
           <LogOut /> Đăng xuất

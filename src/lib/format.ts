@@ -45,3 +45,28 @@ export function formatTimeAgo(date: string | Date, now = Date.now()) {
   const [, size, label] = units.find(([limit]) => seconds < limit)!;
   return `${Math.floor(seconds / size)} ${label} trước`;
 }
+
+const dateFormat = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+const dateTimeFormat = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+
+/** "07/10/2026" */
+export function formatDate(date: string | Date) {
+  return dateFormat.format(new Date(date));
+}
+
+/** "14:05 07/10/2026" */
+export function formatDateTime(date: string | Date) {
+  return dateTimeFormat.format(new Date(date));
+}

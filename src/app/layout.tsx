@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { MessageEventsProvider } from "@/components/chat/message-events-provider";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { HideOnAdmin } from "@/components/layout/hide-on-admin";
 import { SiteHeader } from "@/components/layout/site-header";
 import { Toaster } from "@/components/ui/sonner";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { getSessionUser } from "@/lib/session";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -32,16 +34,21 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const user = await getSessionUser();
+  const isAdmin = user ? await isCurrentUserAdmin() : false;
 
   return (
     <html lang="vi" className={`${font.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <MessageEventsProvider userId={user?.id ?? null}>
-          <SiteHeader user={user} />
+          <HideOnAdmin>
+            <SiteHeader user={user} isAdmin={isAdmin} />
+          </HideOnAdmin>
           <main className="flex flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
             {children}
           </main>
-          <BottomNav loggedIn={Boolean(user)} />
+          <HideOnAdmin>
+            <BottomNav loggedIn={Boolean(user)} />
+          </HideOnAdmin>
         </MessageEventsProvider>
         <Toaster position="top-center" />
       </body>
