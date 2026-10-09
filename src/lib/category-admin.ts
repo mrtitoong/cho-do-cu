@@ -23,7 +23,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
 export const DEFAULT_PIN_COLOR = "#2563eb";
 
 /** Bỏ dấu tiếng Việt, chữ thường, chỉ giữ chữ và số, nối bằng `separator`. */
-export function slugify(text: string, separator: "-" | "_" = "-") {
+export function slugify(text: string, separator: "-" | "_" = "-", maxLength = 60) {
   return text
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -31,8 +31,9 @@ export function slugify(text: string, separator: "-" | "_" = "-") {
     .replace(/Đ/g, "D")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, separator)
-    .replace(new RegExp(`^\\${separator}+|\\${separator}+$`, "g"), "")
-    .slice(0, 60);
+    .slice(0, maxLength)
+    // cắt xong mới bỏ dấu nối ở hai đầu, để slug không kết thúc bằng "-"
+    .replace(new RegExp(`^\\${separator}+|\\${separator}+$`, "g"), "");
 }
 
 /** Key trường sinh từ nhãn: "Số phòng ngủ" → "so_phong_ngu" (bắt đầu bằng chữ). */

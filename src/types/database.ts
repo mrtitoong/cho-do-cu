@@ -492,6 +492,7 @@ export type Database = {
         Args: { p_id: number }
         Returns: undefined
       }
+      admin_delete_post: { Args: { p_id: string }; Returns: undefined }
       admin_list_categories: {
         Args: never
         Returns: {
@@ -576,6 +577,10 @@ export type Database = {
       admin_save_category: {
         Args: { p_data: Json; p_id?: number }
         Returns: number
+      }
+      admin_save_post: {
+        Args: { p_autosave?: boolean; p_data: Json; p_id: string | null }
+        Returns: string
       }
       admin_set_category_active: {
         Args: { p_active: boolean; p_id: number }

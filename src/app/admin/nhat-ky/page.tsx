@@ -26,6 +26,11 @@ const ACTION_LABEL: Record<string, string> = {
   "category.show": "Hiện danh mục",
   "category.delete": "Xóa danh mục",
   "category.reorder": "Đổi thứ tự danh mục",
+  "post.create": "Tạo bài nháp",
+  "post.update": "Sửa bài viết",
+  "post.publish": "Đăng bài",
+  "post.unpublish": "Gỡ bài",
+  "post.delete": "Xóa bài viết",
 };
 
 const TARGET_TYPES = [
@@ -47,6 +52,7 @@ function targetHref(type: string | null, id: string | null) {
   if (type === "user") return `/admin/nguoi-dung/${id}`;
   if (type === "listing") return `/tin/${id}`;
   if (type === "category") return `/admin/danh-muc/${id}`;
+  if (type === "post") return `/admin/tin-tuc/${id}`;
   return null;
 }
 
@@ -56,6 +62,7 @@ function describe(detail: unknown) {
   const parts: string[] = [];
   if (typeof d.name === "string" && d.name) parts.push(d.name);
   if (typeof d.is_active === "boolean") parts.push(d.is_active ? "Bật" : "Ẩn");
+  if (typeof d.is_featured === "boolean") parts.push(d.is_featured ? "Đặt nổi bật" : "Bỏ nổi bật");
   if (typeof d.listings === "number") parts.push(`${d.listings} tin chuyển theo`);
   if (typeof d.reason === "string" && d.reason) parts.push(`Lý do: ${d.reason}`);
   if (typeof d.hidden_listings === "number") parts.push(`Ẩn ${d.hidden_listings} tin`);

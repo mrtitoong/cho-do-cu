@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ListChecks, LogOut, ShieldCheck, User } from "lucide-react";
+import { ListChecks, LogOut, Newspaper, ShieldCheck, User } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 import type { SessionUser } from "@/lib/session";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -57,6 +57,11 @@ export function UserMenu({ user, isAdmin }: { user: SessionUser | null; isAdmin:
         <DropdownMenuItem asChild>
           <Link href="/ho-so">
             <User /> Hồ sơ
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="md:hidden">
+          <Link href="/tin-tuc">
+            <Newspaper /> Tin tức
           </Link>
         </DropdownMenuItem>
         {isAdmin && (
