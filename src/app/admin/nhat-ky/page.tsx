@@ -19,6 +19,13 @@ const ACTION_LABEL: Record<string, string> = {
   "user.revoke_admin": "Thu quyền admin",
   "listing.remove": "Gỡ tin",
   "listing.restore": "Khôi phục tin",
+  "category.create": "Thêm danh mục",
+  "category.update": "Sửa danh mục",
+  "category.move": "Chuyển danh mục cha",
+  "category.hide": "Ẩn danh mục",
+  "category.show": "Hiện danh mục",
+  "category.delete": "Xóa danh mục",
+  "category.reorder": "Đổi thứ tự danh mục",
 };
 
 const TARGET_TYPES = [
@@ -39,6 +46,7 @@ function targetHref(type: string | null, id: string | null) {
   if (!id) return null;
   if (type === "user") return `/admin/nguoi-dung/${id}`;
   if (type === "listing") return `/tin/${id}`;
+  if (type === "category") return `/admin/danh-muc/${id}`;
   return null;
 }
 
@@ -46,6 +54,9 @@ function targetHref(type: string | null, id: string | null) {
 function describe(detail: unknown) {
   const d = (detail ?? {}) as Record<string, unknown>;
   const parts: string[] = [];
+  if (typeof d.name === "string" && d.name) parts.push(d.name);
+  if (typeof d.is_active === "boolean") parts.push(d.is_active ? "Bật" : "Ẩn");
+  if (typeof d.listings === "number") parts.push(`${d.listings} tin chuyển theo`);
   if (typeof d.reason === "string" && d.reason) parts.push(`Lý do: ${d.reason}`);
   if (typeof d.hidden_listings === "number") parts.push(`Ẩn ${d.hidden_listings} tin`);
   if (typeof d.from === "string" && typeof d.to === "string") {

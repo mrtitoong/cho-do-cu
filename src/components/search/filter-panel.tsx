@@ -288,7 +288,10 @@ function MinMax({
   );
 }
 
-/** Bộ lọc riêng tự sinh từ trường filterable của danh mục: select → chọn nhiều, số / năm → khoảng từ – đến. */
+/**
+ * Bộ lọc riêng tự sinh từ trường filterable của danh mục:
+ * select → chọn nhiều, văn bản → ô gõ chữ, số / năm / khoảng số → khoảng từ – đến.
+ */
 function AttrFilterInput({
   field,
   value,
@@ -313,7 +316,24 @@ function AttrFilterInput({
     );
   }
 
-  const range = value && !("values" in value) ? value : {};
+  if (field.type === "text") {
+    const id = `filter-${field.key}`;
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={id}>{field.label}</Label>
+        <Input
+          id={id}
+          className="h-11"
+          maxLength={50}
+          placeholder={field.placeholder ?? `Nhập ${field.label.toLowerCase()}`}
+          value={value && "text" in value ? value.text : ""}
+          onChange={(e) => onChange(e.target.value ? { text: e.target.value } : undefined)}
+        />
+      </div>
+    );
+  }
+
+  const range = value && !("values" in value) && !("text" in value) ? value : {};
   return (
     <MinMax
       id={`filter-${field.key}`}

@@ -488,6 +488,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_category: {
+        Args: { p_id: number }
+        Returns: undefined
+      }
+      admin_list_categories: {
+        Args: never
+        Returns: {
+          active_listings: number
+          color: string
+          fields: Json
+          icon: string
+          id: number
+          is_active: boolean
+          name: string
+          parent_id: number
+          price_label: string
+          requires_images: boolean
+          slug: string
+          sort_order: number
+          total_listings: number
+          used_keys: string[]
+        }[]
+      }
       admin_list_listings: {
         Args: {
           p_category_id?: number
@@ -545,6 +568,18 @@ export type Database = {
           total_count: number
           transactions: number
         }[]
+      }
+      admin_reorder_categories: {
+        Args: { p_ids: number[]; p_parent_id?: number }
+        Returns: undefined
+      }
+      admin_save_category: {
+        Args: { p_data: Json; p_id?: number }
+        Returns: number
+      }
+      admin_set_category_active: {
+        Args: { p_active: boolean; p_id: number }
+        Returns: undefined
       }
       admin_set_listing_status: {
         Args: { p_action: string; p_listing_id: string; p_reason?: string }

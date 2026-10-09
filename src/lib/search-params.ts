@@ -12,7 +12,8 @@ import {
  *   gia_tu   giá tối thiểu (đ)            gia_den    giá tối đa (đ)
  *   bk       bán kính (km, mặc định 5)    sx         sắp xếp (mặc định gần nhất)
  *   lat/lng  tâm tìm kiếm
- *   a_<key>  bộ lọc riêng: "apple,samsung" (select) hoặc "30-80", "30-", "-80" (số / năm)
+ *   a_<key>  bộ lọc riêng: "apple,samsung" (select), "30-80", "30-", "-80" (số / năm / khoảng số)
+ *            hoặc chữ cần tìm (văn bản)
  */
 
 export const RADIUS_OPTIONS = [1, 3, 5, 10, 20] as const;
@@ -27,7 +28,9 @@ export const SORT_OPTIONS = [
 export type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 export const DEFAULT_SORT: SortValue = "nearest";
 
-export type AttrFilter = { values: string[] } | { min?: number; max?: number };
+export type AttrFilter = { values: string[] } | { text: string } | { min?: number; max?: number };
+
+const ATTR_TEXT_MAX = 50;
 
 export type SearchFilters = {
   q: string;
@@ -58,7 +61,11 @@ function parseAttr(field: FieldDef, raw: string): AttrFilter | undefined {
     const values = raw.split(",").filter((v) => allowed.has(v));
     return values.length ? { values: [...new Set(values)] } : undefined;
   }
-  if (field.type === "number" || field.type === "year") {
+  if (field.type === "text") {
+    const text = raw.trim().slice(0, ATTR_TEXT_MAX);
+    return text ? { text } : undefined;
+  }
+  if (field.type === "number" || field.type === "year" || field.type === "range") {
     const [minText, maxText] = raw.split("-");
     const min = parseNumber(minText);
     const max = parseNumber(maxText);
@@ -69,12 +76,14 @@ function parseAttr(field: FieldDef, raw: string): AttrFilter | undefined {
 
 function formatAttr(filter: AttrFilter) {
   if ("values" in filter) return filter.values.join(",");
+  if ("text" in filter) return filter.text.trim();
   return `${filter.min ?? ""}-${filter.max ?? ""}`;
 }
 
 export function isAttrFilterEmpty(filter: AttrFilter | undefined) {
   if (!filter) return true;
   if ("values" in filter) return filter.values.length === 0;
+  if ("text" in filter) return !filter.text.trim();
   return filter.min === undefined && filter.max === undefined;
 }
 
@@ -180,7 +189,12 @@ export function toSearchRpcArgs(
   const attrFilters: Record<string, unknown> = {};
   for (const [key, filter] of Object.entries(filters.attrs)) {
     if (isAttrFilterEmpty(filter)) continue;
-    attrFilters[key] = "values" in filter ? filter.values : { min: filter.min, max: filter.max };
+    attrFilters[key] =
+      "values" in filter
+        ? filter.values
+        : "text" in filter
+          ? { contains: filter.text.trim().slice(0, ATTR_TEXT_MAX) }
+          : { min: filter.min, max: filter.max };
   }
 
   return {
