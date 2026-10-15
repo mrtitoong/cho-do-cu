@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link href="/" className={cn("flex shrink-0 items-center gap-2 font-bold", className)}>
+    <Link href="/" className={cn("flex min-h-11 min-w-11 shrink-0 items-center gap-2 font-bold", className)}>
       <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <Store className="size-5" />
       </span>

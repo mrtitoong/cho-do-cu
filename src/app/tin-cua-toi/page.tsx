@@ -35,6 +35,7 @@ export default async function MyListingsPage() {
       title: row.title,
       status: row.status as MyListing["status"],
       priceText: listingPriceText(sub, { ...row, attributes }, { short: true }),
+      price: row.price,
       area: [row.district, row.province].filter(Boolean).join(", "),
       createdAt: row.created_at,
       coverPath: cover?.path ?? null,

@@ -82,6 +82,7 @@ export default async function ListingPage({ params }: Props) {
   const actionProps = {
     listingId: listing.id,
     status: listing.status,
+    price: listing.price,
     isOwner,
     loggedIn: Boolean(viewerId),
     phoneHint,

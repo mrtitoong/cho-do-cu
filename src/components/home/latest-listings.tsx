@@ -55,9 +55,9 @@ export function LatestListings({ initial, mains }: Props) {
   }, [initial]);
 
   return (
-    <ul className="grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
-        <li key={item.id}>
+        <li key={item.id} className="min-w-0">
           <ListingCard item={item} main={mains[item.parent_category_id]} />
         </li>
       ))}

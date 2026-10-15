@@ -145,6 +145,13 @@
 .leaflet-container .listing-popup a {
   color: var(--foreground);
 }
+/* Nút phóng to / thu nhỏ bản đồ: tối thiểu 44px cho dễ bấm trên điện thoại */
+.leaflet-container.leaflet-touch .leaflet-bar a,
+.leaflet-container .leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+}
 
 /* Nội dung bài tin tức (HTML từ Tiptap) – dùng cho trang công khai, xem trước và trình soạn bài */
 .post-content {

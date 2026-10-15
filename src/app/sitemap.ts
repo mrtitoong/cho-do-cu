@@ -9,7 +9,7 @@ export const revalidate = 3600;
 const MAX_URLS = 50_000; // giới hạn của một file sitemap
 const PAGE_SIZE = 1000;
 
-/** sitemap.xml: trang chủ + các tin đang bán. */
+/** sitemap.xml: trang chủ, tin tức + các bài đã đăng, các tin đang bán. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const home: MetadataRoute.Sitemap[number] = { url: SITE_URL, changeFrequency: "hourly", priority: 1 };
 
@@ -38,8 +38,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (data.length < PAGE_SIZE) break;
   }
 
+  const { data: posts, error: postsError } = await supabase
+    .from("posts")
+    .select("slug, updated_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(1000);
+  if (postsError) console.error("sitemap posts:", postsError);
+
   return [
     home,
+    { url: `${SITE_URL}/tin-tuc`, changeFrequency: "daily", priority: 0.6 },
+    ...(posts ?? []).map((p) => ({
+      url: `${SITE_URL}/tin-tuc/${p.slug}`,
+      lastModified: p.updated_at,
+      changeFrequency: "weekly" as const,
+      priority: 0.5,
+    })),
     ...listings.map((l) => ({
       url: `${SITE_URL}/tin/${l.id}`,
       lastModified: l.updated_at,

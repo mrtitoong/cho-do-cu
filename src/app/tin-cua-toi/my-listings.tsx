@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { CheckCircle2, Eye, EyeOff, ImageIcon, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { ListingImage } from "@/components/listing-image";
+import { MarkSoldButton } from "@/components/listing/mark-sold-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +26,8 @@ export type MyListing = {
   title: string;
   status: ListingStatus;
   priceText: string;
+  /** Giá đăng (giá chốt mặc định khi đánh dấu đã bán) */
+  price: number | null;
   area: string;
   createdAt: string;
   coverPath: string | null;
@@ -37,9 +40,8 @@ const TABS: { value: ListingStatus; label: string; empty: string }[] = [
   { value: "hidden", label: "Đã ẩn", empty: "Không có tin nào đang ẩn." },
 ];
 
-const STATUS_TOAST: Record<ListingStatus, string> = {
+const STATUS_TOAST: Record<"active" | "hidden", string> = {
   active: "Tin đã hiển thị trở lại",
-  sold: "Đã đánh dấu tin là đã bán",
   hidden: "Đã ẩn tin",
 };
 
@@ -90,7 +92,7 @@ export function MyListings({ listings }: { listings: MyListing[] }) {
 function ListingRow({ listing, onDelete }: { listing: MyListing; onDelete: () => void }) {
   const [pending, startTransition] = useTransition();
 
-  function changeStatus(status: ListingStatus) {
+  function changeStatus(status: "active" | "hidden") {
     startTransition(async () => {
       const result = await setListingStatus(listing.id, status);
       if (result.ok) toast.success(STATUS_TOAST[status]);
@@ -124,9 +126,9 @@ function ListingRow({ listing, onDelete }: { listing: MyListing; onDelete: () =>
           </Link>
         </Button>
         {listing.status === "active" && (
-          <Button variant="outline" className="h-11" disabled={pending} onClick={() => changeStatus("sold")}>
+          <MarkSoldButton listingId={listing.id} price={listing.price} variant="outline" className="h-11">
             <CheckCircle2 /> Đã bán
-          </Button>
+          </MarkSoldButton>
         )}
         {listing.status === "hidden" ? (
           <Button variant="outline" className="h-11" disabled={pending} onClick={() => changeStatus("active")}>

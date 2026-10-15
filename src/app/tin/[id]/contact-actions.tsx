@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { loginUrl } from "@/lib/auth-paths";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { setListingStatus } from "@/app/tin-cua-toi/actions";
+import { MarkSoldButton } from "@/components/listing/mark-sold-button";
 import { startConversation } from "./actions";
 
 type Props = {
   listingId: string;
   status: string;
+  /** Giá đăng (giá chốt mặc định khi đánh dấu đã bán) */
+  price: number | null;
   isOwner: boolean;
   loggedIn: boolean;
   /** "0912 xxx xxx"; null = người bán chưa khai số; undefined = không rõ */
@@ -134,17 +136,7 @@ function BuyerButtons({ listingId, loggedIn, phoneHint, row }: Props & { row?: b
   );
 }
 
-function OwnerButtons({ listingId, status, row }: Props & { row?: boolean }) {
-  const [pending, startTransition] = useTransition();
-
-  function markSold() {
-    startTransition(async () => {
-      const result = await setListingStatus(listingId, "sold");
-      if (result.ok) toast.success("Đã đánh dấu tin là đã bán");
-      else toast.error(result.error);
-    });
-  }
-
+function OwnerButtons({ listingId, status, price, row }: Props & { row?: boolean }) {
   return (
     <div className={cn("flex gap-2", row ? "flex-row" : "flex-col")}>
       <Button asChild variant="outline" className="h-11 flex-1 text-base">
@@ -153,9 +145,9 @@ function OwnerButtons({ listingId, status, row }: Props & { row?: boolean }) {
         </Link>
       </Button>
       {status === "active" && (
-        <Button onClick={markSold} disabled={pending} className="h-11 flex-1 text-base">
-          {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Đánh dấu đã bán
-        </Button>
+        <MarkSoldButton listingId={listingId} price={price} className="h-11 flex-1 text-base">
+          <CheckCircle2 /> Đánh dấu đã bán
+        </MarkSoldButton>
       )}
     </div>
   );
