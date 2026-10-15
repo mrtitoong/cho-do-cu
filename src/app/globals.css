@@ -196,3 +196,24 @@
 .post-content .ProseMirror-selectednode {
   outline: 2px solid var(--ring);
 }
+
+/* Biểu đồ trang Tổng quan Admin (bảng màu đã kiểm tra mù màu, xem dataviz palette) */
+.admin-viz {
+  --viz-1: #2a78d6; /* người dùng mới */
+  --viz-2: #eb6834; /* tin mới, tin đang bán */
+  --viz-3: #1baf7a; /* giao dịch */
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-up: #006300;
+  --viz-down: #d03b3b;
+}
+.dark .admin-viz {
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-grid: #2c2c2a;
+  --viz-axis: #383835;
+  --viz-up: #0ca30c;
+  --viz-down: #e66767;
+}
