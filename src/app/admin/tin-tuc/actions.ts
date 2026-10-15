@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import type { AdminActionResult } from "@/app/admin/actions";
 import { adminErrorMessage, requireAdmin } from "@/lib/admin";
+import { POSTS_TAG } from "@/lib/home-data";
 import { renderPostHtml } from "@/lib/post-html";
 import { POST_IMAGES_BUCKET, postImagesBaseUrl, postInputSchema, type PostInput, type PostStatus } from "@/lib/posts";
 import type { Json } from "@/types/database";
@@ -22,6 +23,7 @@ function revalidatePosts(id: string | null, isPublic: boolean) {
   if (id) revalidatePath(`/admin/tin-tuc/${id}`);
   revalidatePath("/admin/nhat-ky");
   if (isPublic) {
+    revalidateTag(POSTS_TAG, { expire: 0 }); // khối tin tức trên trang chủ
     revalidatePath("/");
     revalidatePath("/tin-tuc", "layout"); // gồm cả /tin-tuc/[slug]
   }

@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListChecks, MessageCircle, Plus, User } from "lucide-react";
+import { Home, Map as MapIcon, MessageCircle, Plus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UnreadBadge } from "@/components/chat/unread-badge";
 
 const items = [
   { href: "/", label: "Trang chủ", icon: Home },
-  { href: "/tin-nhan", label: "Tin nhắn", icon: MessageCircle },
+  { href: "/tim-kiem", label: "Tìm kiếm", icon: MapIcon },
   { href: "/dang-tin", label: "Đăng tin", icon: Plus, primary: true },
-  { href: "/tin-cua-toi", label: "Tin của tôi", icon: ListChecks },
+  { href: "/tin-nhan", label: "Tin nhắn", icon: MessageCircle },
   { href: "/ho-so", label: "Tài khoản", icon: User },
 ];
 
